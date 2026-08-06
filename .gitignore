@@ -1,0 +1,9 @@
+node_modules/
+npm-debug.log*
+
+# Local encrypted DB credentials + encryption key — never commit these.
+data/
+
+# Env files if used for local overrides
+.env
+.env.*

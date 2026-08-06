@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contabilidad · Dashboard Ejecutivo</title>
+<link rel="stylesheet" href="/css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="mark"></span> Contabilidad · Grupo</div>
+  <nav class="nav-links">
+    <a href="/">Dashboard</a>
+    <a href="/report.html">Reporte</a>
+    <a href="/settings.html">Mantenedor</a>
+  </nav>
+  <div class="top-actions">
+    <span class="env-pill" id="sync-pill">—</span>
+    <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">☽</button>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <h1>Dashboard Ejecutivo</h1>
+      <div class="subtitle">Consolidado multiempresa desde Business Central · Importe en divisa adicional</div>
+    </div>
+  </div>
+
+  <div id="not-configured" class="empty-state card" style="display:none;">
+    <h3>La conexión aún no está configurada</h3>
+    <p>Ve a <a href="/settings.html">Mantenedor</a> para ingresar el servidor, base de datos y credenciales de Business Central.</p>
+  </div>
+
+  <div id="app-content" style="display:none;">
+    <div class="filter-bar">
+      <div class="field" style="min-width:260px;">
+        <label>Empresas</label>
+        <select id="f-companies" multiple size="4"></select>
+      </div>
+      <div class="field">
+        <label>Años</label>
+        <select id="f-years" multiple size="4"></select>
+      </div>
+      <button class="btn" id="btn-apply">Actualizar</button>
+      <button class="btn secondary" id="btn-clear">Limpiar</button>
+      <div class="spacer"></div>
+      <span class="last-sync" id="last-updated"></span>
+    </div>
+
+    <div id="loading-line" class="loading-line" style="display:none; margin-bottom:16px;"></div>
+
+    <div class="kpi-row">
+      <div class="kpi-tile"><div class="label">Total Activo</div><div class="value" id="kpi-activo">—</div></div>
+      <div class="kpi-tile"><div class="label">Total Pasivo</div><div class="value" id="kpi-pasivo">—</div></div>
+      <div class="kpi-tile"><div class="label">Patrimonio</div><div class="value" id="kpi-patrimonio">—</div></div>
+      <div class="kpi-tile"><div class="label">Resultado del período</div><div class="value" id="kpi-resultado">—</div></div>
+      <div class="kpi-tile"><div class="label">Empresas con datos</div><div class="value" id="kpi-empresas">—</div></div>
+      <div class="kpi-tile"><div class="label">Cuentas con movimiento</div><div class="value" id="kpi-cuentas">—</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Evolución mensual — Ingresos vs Gastos</h3>
+        <div class="card-sub">Suma de importe en divisa adicional por mes de registro</div>
+        <canvas id="chart-trend" height="110"></canvas>
+      </div>
+      <div class="card">
+        <h3>Resultado mensual</h3>
+        <div class="card-sub">Ingresos + Gastos del mes (positivo = favorable)</div>
+        <canvas id="chart-resultado" height="110"></canvas>
+      </div>
+    </div>
+
+    <div class="grid-2b">
+      <div class="card">
+        <h3>Top 10 cuentas por magnitud de saldo</h3>
+        <div class="card-sub">Todas las empresas y períodos seleccionados</div>
+        <canvas id="chart-accounts" height="230"></canvas>
+      </div>
+      <div class="card">
+        <h3>Ranking de empresas por resultado</h3>
+        <div class="card-sub">5 con mejor resultado y 5 con peor resultado</div>
+        <div class="mono-list" id="company-ranking"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/js/common.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

@@ -2,8 +2,17 @@
   "name": "contabilidad",
   "version": "1.0.0",
   "private": true,
-  "description": "Proyecto básico de contabilidad",
+  "description": "Panel de contabilidad multiempresa - Dashboard ejecutivo, reporte tipo tabla dinamica y mantenedor de conexion a Business Central",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "start": "echo \"No hay script de inicio configurado\""
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mssql": "^11.0.1"
   }
 }

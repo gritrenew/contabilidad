@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contabilidad · Mantenedor</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="mark"></span> Contabilidad · Grupo</div>
+  <nav class="nav-links">
+    <a href="/">Dashboard</a>
+    <a href="/report.html">Reporte</a>
+    <a href="/settings.html">Mantenedor</a>
+  </nav>
+  <div class="top-actions">
+    <span class="env-pill" id="sync-pill">—</span>
+    <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">☽</button>
+  </div>
+</header>
+
+<main class="page" style="max-width:760px;">
+  <div class="page-header">
+    <div>
+      <h1>Mantenedor de conexión</h1>
+      <div class="subtitle">Servidor, base de datos y vista de origen (Business Central / dwh)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:14px;">Parámetros de conexión</h3>
+    <div class="form-grid" id="settings-form">
+      <div class="field">
+        <label>Servidor <span class="badge env" id="badge-server" style="display:none;">Azure</span></label>
+        <input type="text" id="s-server" placeholder="mi-servidor.database.windows.net" />
+      </div>
+      <div class="field">
+        <label>Puerto <span class="badge env" id="badge-port" style="display:none;">Azure</span></label>
+        <input type="number" id="s-port" placeholder="1433" />
+      </div>
+      <div class="field">
+        <label>Base de datos <span class="badge env" id="badge-database" style="display:none;">Azure</span></label>
+        <input type="text" id="s-database" placeholder="BC_DWH" />
+      </div>
+      <div class="field">
+        <label>Usuario <span class="badge env" id="badge-user" style="display:none;">Azure</span></label>
+        <input type="text" id="s-user" placeholder="usuario_lectura" />
+      </div>
+      <div class="field">
+        <label>Contraseña <span class="badge env" id="badge-password" style="display:none;">Azure</span></label>
+        <input type="password" id="s-password" placeholder="••••••••" />
+      </div>
+      <div class="field">
+        <label>Vista <span class="badge env" id="badge-view" style="display:none;">Azure</span></label>
+        <input type="text" id="s-view" placeholder="dwh.FIN_VW_PBI_TH_MovimientosContabilidad" />
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="s-encrypt" />
+        <label for="s-encrypt">Cifrar conexión (Azure SQL / recomendado)</label>
+        <span class="badge env" id="badge-encrypt" style="display:none;">Azure</span>
+      </div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="s-trust" />
+        <label for="s-trust">Confiar en certificado del servidor (solo redes internas)</label>
+        <span class="badge env" id="badge-trustServerCertificate" style="display:none;">Azure</span>
+      </div>
+    </div>
+
+    <p class="hint">Los campos marcados <span class="badge env">Azure</span> están fijados por una variable de entorno de Azure App Service (Application Settings) y no se pueden editar aquí — cámbialas en el portal de Azure. El resto se guarda cifrado en este servidor.</p>
+
+    <div class="form-actions">
+      <button class="btn secondary" id="btn-test">Probar conexión</button>
+      <button class="btn" id="btn-save">Guardar</button>
+      <span class="badge" id="configured-badge"></span>
+    </div>
+
+    <div id="result" style="display:none;"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h3>Cómo funciona</h3>
+    <p class="hint">
+      Esta app se conecta de solo lectura a la vista configurada arriba y agrega los movimientos por
+      Sociedad, N° de cuenta, año y mes usando el campo Importe divisa-adicional
+      (Additional_Currency_Amount). El Dashboard y el Reporte consumen ese mismo dato agregado.
+    </p>
+    <p class="hint">
+      Modelo híbrido de configuración: lo que guardes aquí se cifra y queda en este servidor para
+      uso diario. En producción (Azure Web App), puedes fijar las mismas variables como
+      <code>DB_SERVER</code>, <code>DB_PORT</code>, <code>DB_DATABASE</code>, <code>DB_USER</code>,
+      <code>DB_PASSWORD</code>, <code>DB_VIEW</code>, <code>DB_ENCRYPT</code>,
+      <code>DB_TRUST_CERT</code> en Application Settings de Azure — esas siempre ganan sobre lo
+      guardado aquí.
+    </p>
+  </div>
+</main>
+
+<script src="/js/common.js"></script>
+<script src="/js/settings.js"></script>
+</body>
+</html>

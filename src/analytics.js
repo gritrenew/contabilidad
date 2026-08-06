@@ -1,0 +1,138 @@
+/**
+ * Rubro classification follows the chart-of-accounts prefix convention visible
+ * in the source ledgers: 1x = Activo, 23x = Patrimonio, 2x (else) = Pasivo,
+ * 4x = Gasto (incl. 47x impuestos), 5x = Ingreso. The "P&L" subtotal in the
+ * original spreadsheets is the raw sum of the 4x/5x accounts with no sign
+ * flip, so we mirror that exactly here.
+ */
+function classifyRubro(accountNo) {
+  const match = String(accountNo || '').match(/^(\d{2})/);
+  if (!match) return 'Otro';
+  const twoDigit = match[1];
+  const firstDigit = twoDigit[0];
+  if (firstDigit === '1') return 'Activo';
+  if (twoDigit === '23') return 'Patrimonio';
+  if (firstDigit === '2') return 'Pasivo';
+  if (firstDigit === '4') return 'Gasto';
+  if (firstDigit === '5') return 'Ingreso';
+  return 'Otro';
+}
+
+const RESULT_RUBROS = new Set(['Ingreso', 'Gasto']);
+
+function buildDashboard(rows) {
+  const totals = { Activo: 0, Pasivo: 0, Patrimonio: 0, Ingreso: 0, Gasto: 0, Otro: 0 };
+  const perCompany = new Map();
+  const perAccount = new Map();
+  const perMonth = new Map();
+  const companiesSet = new Set();
+  const accountsSet = new Set();
+  let movimientos = 0;
+
+  for (const row of rows) {
+    const rubro = classifyRubro(row.G_L_Account_No);
+    const saldo = Number(row.Saldo) || 0;
+    totals[rubro] = (totals[rubro] || 0) + saldo;
+    movimientos += row.Movimientos || 0;
+    companiesSet.add(row.Sociedad);
+    accountsSet.add(row.G_L_Account_No);
+
+    if (!perCompany.has(row.Sociedad)) {
+      perCompany.set(row.Sociedad, { sociedad: row.Sociedad, resultado: 0, activo: 0, pasivo: 0, patrimonio: 0 });
+    }
+    const company = perCompany.get(row.Sociedad);
+    if (RESULT_RUBROS.has(rubro)) company.resultado += saldo;
+    if (rubro === 'Activo') company.activo += saldo;
+    if (rubro === 'Pasivo') company.pasivo += saldo;
+    if (rubro === 'Patrimonio') company.patrimonio += saldo;
+
+    const accountKey = `${row.G_L_Account_No}||${row.G_L_Account_Name}`;
+    if (!perAccount.has(accountKey)) {
+      perAccount.set(accountKey, { accountNo: row.G_L_Account_No, name: row.G_L_Account_Name, saldo: 0, rubro });
+    }
+    perAccount.get(accountKey).saldo += saldo;
+
+    if (RESULT_RUBROS.has(rubro)) {
+      const periodKey = `${row.Anio}-${String(row.Mes).padStart(2, '0')}`;
+      if (!perMonth.has(periodKey)) {
+        perMonth.set(periodKey, { periodo: periodKey, ingreso: 0, gasto: 0 });
+      }
+      const bucket = perMonth.get(periodKey);
+      if (rubro === 'Ingreso') bucket.ingreso += saldo;
+      else bucket.gasto += saldo;
+    }
+  }
+
+  const resultado = totals.Ingreso + totals.Gasto;
+
+  const monthly = Array.from(perMonth.values())
+    .sort((a, b) => a.periodo.localeCompare(b.periodo))
+    .map((m) => ({ ...m, resultado: m.ingreso + m.gasto }));
+
+  const topAccounts = Array.from(perAccount.values())
+    .sort((a, b) => Math.abs(b.saldo) - Math.abs(a.saldo))
+    .slice(0, 10);
+
+  const companiesArr = Array.from(perCompany.values());
+  const topPositiveCompanies = [...companiesArr]
+    .filter((c) => c.resultado > 0)
+    .sort((a, b) => b.resultado - a.resultado)
+    .slice(0, 5);
+  const topNegativeCompanies = [...companiesArr]
+    .filter((c) => c.resultado < 0)
+    .sort((a, b) => a.resultado - b.resultado)
+    .slice(0, 5);
+
+  return {
+    kpis: {
+      activo: totals.Activo,
+      pasivo: totals.Pasivo,
+      patrimonio: totals.Patrimonio,
+      ingreso: totals.Ingreso,
+      gasto: totals.Gasto,
+      resultado,
+      empresas: companiesSet.size,
+      cuentas: accountsSet.size,
+      movimientos,
+    },
+    monthly,
+    topAccounts,
+    topPositiveCompanies,
+    topNegativeCompanies,
+  };
+}
+
+/** Pivots the flat (Sociedad, Cuenta, Anio, Mes, Saldo) rows into one row per account per company. */
+function buildPivot(rows) {
+  const accountMap = new Map();
+  const periodsSet = new Set();
+
+  for (const row of rows) {
+    const periodKey = `${row.Anio}-${String(row.Mes).padStart(2, '0')}`;
+    periodsSet.add(periodKey);
+    const rowKey = `${row.Sociedad}||${row.G_L_Account_No}`;
+    if (!accountMap.has(rowKey)) {
+      accountMap.set(rowKey, {
+        sociedad: row.Sociedad,
+        accountNo: row.G_L_Account_No,
+        name: row.G_L_Account_Name,
+        rubro: classifyRubro(row.G_L_Account_No),
+        periods: {},
+        total: 0,
+      });
+    }
+    const entry = accountMap.get(rowKey);
+    const saldo = Number(row.Saldo) || 0;
+    entry.periods[periodKey] = (entry.periods[periodKey] || 0) + saldo;
+    entry.total += saldo;
+  }
+
+  const periods = Array.from(periodsSet).sort();
+  const items = Array.from(accountMap.values()).sort((a, b) =>
+    a.sociedad === b.sociedad ? a.accountNo.localeCompare(b.accountNo) : a.sociedad.localeCompare(b.sociedad)
+  );
+
+  return { periods, items };
+}
+
+module.exports = { classifyRubro, buildDashboard, buildPivot };
