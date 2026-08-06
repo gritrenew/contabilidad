@@ -1,0 +1,9 @@
+{
+  "name": "contabilidad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Proyecto básico de contabilidad",
+  "scripts": {
+    "start": "echo \"No hay script de inicio configurado\""
+  }
+}
