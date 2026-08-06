@@ -6,6 +6,7 @@
   const rowCountEl = document.getElementById('row-count');
 
   const companySelect = document.getElementById('f-companies');
+  const countrySelect = document.getElementById('f-countries');
   const yearSelect = document.getElementById('f-years');
   const monthSelect = document.getElementById('f-months');
   const rubroSelect = document.getElementById('f-rubro');
@@ -78,6 +79,7 @@
       multiCompany = companies.length !== 1;
       const params = CTB.qs({
         companies,
+        countries: CTB.selectedValues(countrySelect),
         years: CTB.selectedValues(yearSelect),
         months: CTB.selectedValues(monthSelect),
         search: searchInput.value.trim(),
@@ -97,6 +99,7 @@
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadReport(); });
   document.getElementById('btn-clear').addEventListener('click', () => {
     Array.from(companySelect.options).forEach((o) => (o.selected = false));
+    Array.from(countrySelect.options).forEach((o) => (o.selected = false));
     Array.from(yearSelect.options).forEach((o) => (o.selected = false));
     Array.from(monthSelect.options).forEach((o) => (o.selected = false));
     rubroSelect.value = '';
@@ -113,6 +116,8 @@
     }
     syncPill.textContent = 'Conectado';
     appContent.style.display = 'block';
+    const countries = await CTB.fetchJSON('/api/countries');
+    countrySelect.innerHTML = countries.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
     await CTB.populateFilters({ companySelect, yearSelect });
     await loadReport();
   } catch (err) {

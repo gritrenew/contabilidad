@@ -15,6 +15,7 @@ const FIELDS = {
   user: { envVar: 'DB_USER', type: 'string', default: '' },
   password: { envVar: 'DB_PASSWORD', type: 'string', default: '' },
   view: { envVar: 'DB_VIEW', type: 'string', default: 'dwh.FIN_VW_PBI_TH_MovimientosContabilidad' },
+  companiesView: { envVar: 'DB_COMPANIES_VIEW', type: 'string', default: 'dwh.FIN_VW_PBI_TD_Empresas' },
   encrypt: { envVar: 'DB_ENCRYPT', type: 'boolean', default: true },
   trustServerCertificate: { envVar: 'DB_TRUST_CERT', type: 'boolean', default: false },
 };

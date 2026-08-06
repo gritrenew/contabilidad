@@ -3,11 +3,24 @@
   const resultBox = document.getElementById('result');
   const configuredBadge = document.getElementById('configured-badge');
 
-  const FIELDS = ['server', 'port', 'database', 'user', 'password', 'view'];
+  const FIELDS = ['server', 'port', 'database', 'user', 'password', 'view', 'companiesView'];
   const CHECKBOXES = ['encrypt', 'trustServerCertificate'];
+  const REQUIRED = ['server', 'database', 'user', 'view', 'companiesView'];
+  const LABELS = {
+    server: 'Servidor', database: 'Base de datos', user: 'Usuario',
+    view: 'Vista de movimientos', companiesView: 'Vista de empresas',
+  };
 
   function fieldEl(name) { return document.getElementById('s-' + name); }
   function badgeEl(name) { return document.getElementById('badge-' + name); }
+
+  /** Fields the user must fill in themselves — skips any field locked by an Azure env var. */
+  function findMissingRequired() {
+    return REQUIRED.filter((name) => {
+      const el = fieldEl(name);
+      return !el.disabled && !el.value.trim();
+    });
+  }
 
   function applySettings(data) {
     FIELDS.forEach((name) => {
@@ -54,6 +67,11 @@
   }
 
   document.getElementById('btn-test').addEventListener('click', async () => {
+    const missing = findMissingRequired();
+    if (missing.length) {
+      showResult(false, 'Completa estos campos antes de probar: ' + missing.map((n) => LABELS[n]).join(', '));
+      return;
+    }
     showResult(true, 'Probando conexión…');
     try {
       const result = await CTB.fetchJSON('/api/settings/test', {
@@ -61,13 +79,22 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(collectForm()),
       });
-      showResult(true, `Conexión exitosa. Se leyeron ${result.rowCount} fila(s) de muestra de la vista. Columnas detectadas: ${result.columns.slice(0, 8).join(', ')}${result.columns.length > 8 ? '…' : ''}`);
+      const base = `Conexión exitosa. Se leyeron ${result.rowCount} fila(s) de muestra de la vista de movimientos (${result.columns.length} columnas).`;
+      const companiesMsg = result.companiesOk
+        ? ' Vista de empresas OK.'
+        : ` Ojo: la vista de empresas dio error → ${result.companiesError}`;
+      showResult(result.companiesOk, base + companiesMsg);
     } catch (err) {
       showResult(false, 'Error de conexión: ' + err.message);
     }
   });
 
   document.getElementById('btn-save').addEventListener('click', async () => {
+    const missing = findMissingRequired();
+    if (missing.length) {
+      showResult(false, 'Completa estos campos antes de guardar: ' + missing.map((n) => LABELS[n]).join(', '));
+      return;
+    }
     try {
       const data = await CTB.fetchJSON('/api/settings', {
         method: 'POST',

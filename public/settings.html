@@ -52,8 +52,13 @@
         <input type="password" id="s-password" placeholder="••••••••" />
       </div>
       <div class="field">
-        <label>Vista <span class="badge env" id="badge-view" style="display:none;">Azure</span></label>
+        <label>Vista de movimientos <span class="badge env" id="badge-view" style="display:none;">Azure</span></label>
         <input type="text" id="s-view" placeholder="dwh.FIN_VW_PBI_TH_MovimientosContabilidad" />
+      </div>
+      <div class="field">
+        <label>Vista de empresas <span class="badge env" id="badge-companiesView" style="display:none;">Azure</span></label>
+        <input type="text" id="s-companiesView" placeholder="dwh.FIN_VW_PBI_TD_Empresas" />
+        <span class="hint">Tabla/vista que traduce CodEmpresa (GUID) a nombre y país.</span>
       </div>
     </div>
 
@@ -64,8 +69,8 @@
         <span class="badge env" id="badge-encrypt" style="display:none;">Azure</span>
       </div>
       <div class="checkbox-field">
-        <input type="checkbox" id="s-trust" />
-        <label for="s-trust">Confiar en certificado del servidor (solo redes internas)</label>
+        <input type="checkbox" id="s-trustServerCertificate" />
+        <label for="s-trustServerCertificate">Confiar en certificado del servidor (solo redes internas)</label>
         <span class="badge env" id="badge-trustServerCertificate" style="display:none;">Azure</span>
       </div>
     </div>

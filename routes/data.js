@@ -13,6 +13,7 @@ function parseListParam(raw) {
 function parseFilters(query) {
   return {
     companies: parseListParam(query.companies),
+    countries: parseListParam(query.countries),
     years: parseListParam(query.years).map(Number),
     months: parseListParam(query.months).map(Number),
     search: query.search ? String(query.search).trim() : undefined,
@@ -34,6 +35,14 @@ router.get('/companies', async (req, res) => {
 router.get('/years', async (req, res) => {
   try {
     res.json(await queries.getYears());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/countries', async (req, res) => {
+  try {
+    res.json(await queries.getCountries());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -59,11 +59,20 @@ async function testConnection(settings) {
   const testPool = new sql.ConnectionPool(buildConfig(settings));
   try {
     await testPool.connect();
-    const viewName = settings.view;
-    const result = await testPool.request().query(`SELECT TOP 5 * FROM ${viewName}`);
+    const result = await testPool.request().query(`SELECT TOP 5 * FROM ${settings.view}`);
     const rowCount = result.recordset.length;
     const columns = result.recordset.columns ? Object.keys(result.recordset.columns) : Object.keys(result.recordset[0] || {});
-    return { ok: true, rowCount, columns };
+
+    let companiesOk = true;
+    let companiesError = null;
+    try {
+      await testPool.request().query(`SELECT TOP 1 CodEmpresa, NomEmpresa FROM ${settings.companiesView}`);
+    } catch (err) {
+      companiesOk = false;
+      companiesError = err.message;
+    }
+
+    return { ok: true, rowCount, columns, companiesOk, companiesError };
   } finally {
     await testPool.close();
   }

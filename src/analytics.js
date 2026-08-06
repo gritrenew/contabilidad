@@ -4,8 +4,18 @@
  * 4x = Gasto (incl. 47x impuestos), 5x = Ingreso. The "P&L" subtotal in the
  * original spreadsheets is the raw sum of the 4x/5x accounts with no sign
  * flip, so we mirror that exactly here.
+ *
+ * This prefix convention was validated against real data for Chile only
+ * (0% of rows fall outside it). España (Plan General Contable) and Colombia
+ * (PUC) use different numbering — e.g. a Spanish "7000002 VENTAS" account is
+ * Ingreso there but would misclassify as "Otro" under this scheme. Until we
+ * add per-country rules, non-Chile rows are deliberately classified "Otro"
+ * so they never silently pollute the Activo/Pasivo/Patrimonio/Resultado KPIs —
+ * they still show up in full in the Reporte page (raw pivot), just not folded
+ * into these totals.
  */
-function classifyRubro(accountNo) {
+function classifyRubro(accountNo, pais) {
+  if (pais && pais !== 'Chile') return 'Otro';
   const match = String(accountNo || '').match(/^(\d{2})/);
   if (!match) return 'Otro';
   const twoDigit = match[1];
@@ -30,7 +40,7 @@ function buildDashboard(rows) {
   let movimientos = 0;
 
   for (const row of rows) {
-    const rubro = classifyRubro(row.G_L_Account_No);
+    const rubro = classifyRubro(row.G_L_Account_No, row.Pais);
     const saldo = Number(row.Saldo) || 0;
     totals[rubro] = (totals[rubro] || 0) + saldo;
     movimientos += row.Movimientos || 0;
@@ -46,6 +56,9 @@ function buildDashboard(rows) {
     if (rubro === 'Pasivo') company.pasivo += saldo;
     if (rubro === 'Patrimonio') company.patrimonio += saldo;
 
+    // Top-accounts-by-magnitude is rubro-agnostic (every amount is already in
+    // the common reporting currency), so every country contributes here even
+    // though only Chile feeds the classified KPI totals above.
     const accountKey = `${row.G_L_Account_No}||${row.G_L_Account_Name}`;
     if (!perAccount.has(accountKey)) {
       perAccount.set(accountKey, { accountNo: row.G_L_Account_No, name: row.G_L_Account_Name, saldo: 0, rubro });
@@ -114,9 +127,10 @@ function buildPivot(rows) {
     if (!accountMap.has(rowKey)) {
       accountMap.set(rowKey, {
         sociedad: row.Sociedad,
+        pais: row.Pais || null,
         accountNo: row.G_L_Account_No,
         name: row.G_L_Account_Name,
-        rubro: classifyRubro(row.G_L_Account_No),
+        rubro: classifyRubro(row.G_L_Account_No, row.Pais),
         periods: {},
         total: 0,
       });
