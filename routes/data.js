@@ -66,4 +66,23 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
+router.get('/detail', async (req, res) => {
+  try {
+    const { company, account } = req.query;
+    if (!company || !account) {
+      return res.status(400).json({ error: 'Falta company o account' });
+    }
+    const filters = parseFilters(req.query);
+    const result = await queries.getMovementDetail({
+      company,
+      accountNo: account,
+      years: filters.years,
+      months: filters.months,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

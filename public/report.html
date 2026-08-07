@@ -79,7 +79,12 @@
     </div>
 
     <div id="loading-line" class="loading-line" style="display:none; margin-bottom:16px;"></div>
-    <div class="hint" id="row-count" style="margin-bottom:8px;"></div>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+      <div class="hint" id="row-count" style="margin:0;"></div>
+      <div class="spacer"></div>
+      <button class="btn secondary" id="btn-expand-all">Expandir todo</button>
+      <button class="btn secondary" id="btn-collapse-all">Colapsar todo</button>
+    </div>
 
     <div class="table-scroll">
       <table id="pivot-table">

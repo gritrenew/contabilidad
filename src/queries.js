@@ -1,17 +1,15 @@
 const { sql, getPool } = require('./db');
 const { getEffectiveSettings } = require('./settingsStore');
+const companiesCache = require('./companiesCache');
 
 const VIEW_NAME_PATTERN = /^[A-Za-z0-9_.\[\]]+$/;
 
-function getViewNames() {
+function getMovementsView() {
   const { settings } = getEffectiveSettings();
   if (!VIEW_NAME_PATTERN.test(settings.view || '')) {
     throw new Error('Nombre de vista de movimientos invalido en Mantenedor.');
   }
-  if (!VIEW_NAME_PATTERN.test(settings.companiesView || '')) {
-    throw new Error('Nombre de vista de empresas invalido en Mantenedor.');
-  }
-  return { movements: settings.view, companies: settings.companiesView };
+  return settings.view;
 }
 
 /** Adds a parameterized IN(...) clause to `request`; returns the SQL fragment or null when values is empty. */
@@ -25,47 +23,45 @@ function addInClause(request, prefix, values, sqlType) {
   return `(${names.join(', ')})`;
 }
 
-// CodEmpresa is a Business Central company GUID with no readable name of its own —
-// dwh.FIN_VW_PBI_TD_Empresas is the dimension table that maps it to NomEmpresa/NomPais.
-// A handful of very recently created companies (~0.1% of rows) aren't in that table
-// yet, so every join below is a LEFT JOIN with a visible fallback label instead of
-// silently dropping their rows from totals.
-function unknownCompanyExpr(factAlias) {
-  return `CONCAT('Empresa sin nombre (', ${factAlias}.CodEmpresa, ')')`;
+/**
+ * Builds a `column IN (...)` condition from user-facing filter values (company
+ * names, country names) that first need resolving to CodEmpresa GUIDs via the
+ * cached dimension. If the caller asked for a filter and it resolves to zero
+ * codes (e.g. stale selection), we return an always-false condition instead of
+ * silently dropping the filter — better an empty result than the wrong data.
+ */
+function addResolvedCodeClause(request, prefix, requestedValues, resolveToCodes) {
+  if (!requestedValues || requestedValues.length === 0) return null;
+  const codes = resolveToCodes(requestedValues);
+  if (codes.length === 0) return '1 = 0';
+  const clause = addInClause(request, prefix, codes, sql.NVarChar(80));
+  return `f.CodEmpresa IN ${clause}`;
 }
 
 async function getCompanies() {
-  const { movements, companies } = getViewNames();
+  const movements = getMovementsView();
+  const dim = await companiesCache.loadCompanies();
   const pool = await getPool();
-  const named = await pool.request().query(`
-    SELECT DISTINCT e.NomEmpresa AS Nombre
-    FROM ${companies} e
-    WHERE e.NomEmpresa IS NOT NULL
-      AND EXISTS (SELECT 1 FROM ${movements} f WHERE f.CodEmpresa = e.CodEmpresa)
-  `);
-  const unnamed = await pool.request().query(`
-    SELECT DISTINCT ${unknownCompanyExpr('f')} AS Nombre
-    FROM ${movements} f
-    WHERE NOT EXISTS (SELECT 1 FROM ${companies} e WHERE e.CodEmpresa = f.CodEmpresa)
-  `);
-  return [...named.recordset, ...unnamed.recordset].map((r) => r.Nombre).sort();
+  const result = await pool.request().query(`SELECT DISTINCT CodEmpresa FROM ${movements}`);
+  const names = new Set(result.recordset.map((r) => companiesCache.labelFor(r.CodEmpresa, dim)));
+  return Array.from(names).sort();
 }
 
 async function getCountries() {
-  const { movements, companies } = getViewNames();
+  const movements = getMovementsView();
+  const dim = await companiesCache.loadCompanies();
   const pool = await getPool();
-  const result = await pool.request().query(`
-    SELECT DISTINCT e.NomPais AS Pais
-    FROM ${companies} e
-    WHERE e.NomPais IS NOT NULL
-      AND EXISTS (SELECT 1 FROM ${movements} f WHERE f.CodEmpresa = e.CodEmpresa)
-    ORDER BY e.NomPais
-  `);
-  return result.recordset.map((r) => r.Pais);
+  const result = await pool.request().query(`SELECT DISTINCT CodEmpresa FROM ${movements}`);
+  const countries = new Set();
+  result.recordset.forEach((r) => {
+    const pais = companiesCache.countryFor(r.CodEmpresa, dim);
+    if (pais) countries.add(pais);
+  });
+  return Array.from(countries).sort();
 }
 
 async function getYears() {
-  const { movements } = getViewNames();
+  const movements = getMovementsView();
   const pool = await getPool();
   const result = await pool.request().query(`
     SELECT DISTINCT CAST(Año AS INT) AS Anio
@@ -76,27 +72,19 @@ async function getYears() {
   return result.recordset.map((r) => r.Anio);
 }
 
-/**
- * Core aggregation: one row per Sociedad + Cuenta + Anio + Mes with the summed
- * "Importe divisa-adicional" (addCurrAmount) — this is the number both the
- * pivot report and the dashboard build on top of. Output shape is kept as
- * {Sociedad, G_L_Account_No, G_L_Account_Name, Anio, Mes, Saldo, Movimientos}
- * on purpose, so analytics.js and the frontend don't need to know about the
- * real column names underneath.
- */
-async function getMovementSummary({ companies, countries, years, months, search } = {}) {
-  const { movements, companies: companiesView } = getViewNames();
-  const pool = await getPool();
-  const request = pool.request();
-
-  const sociedadExpr = `COALESCE(e.NomEmpresa, ${unknownCompanyExpr('f')})`;
+/** Shared WHERE-clause builder for the period/company/country/search filters every list query accepts. */
+function addCommonFilterConditions(request, dim, { companies, countries, years, months, search } = {}) {
   const conditions = [`f.Año IS NOT NULL`, `f.Año <> ''`];
 
-  const companiesClause = addInClause(request, 'company', companies, sql.NVarChar(300));
-  if (companiesClause) conditions.push(`${sociedadExpr} IN ${companiesClause}`);
+  const companiesCondition = addResolvedCodeClause(request, 'company', companies, (names) =>
+    companiesCache.resolveCompanyCodes(names, dim)
+  );
+  if (companiesCondition) conditions.push(companiesCondition);
 
-  const countriesClause = addInClause(request, 'country', countries, sql.NVarChar(200));
-  if (countriesClause) conditions.push(`e.NomPais IN ${countriesClause}`);
+  const countriesCondition = addResolvedCodeClause(request, 'country', countries, (names) =>
+    companiesCache.resolveCountryCodes(names, dim)
+  );
+  if (countriesCondition) conditions.push(countriesCondition);
 
   const yearsClause = addInClause(request, 'year', years, sql.Int);
   if (yearsClause) conditions.push(`CAST(f.Año AS INT) IN ${yearsClause}`);
@@ -109,10 +97,30 @@ async function getMovementSummary({ companies, countries, years, months, search 
     conditions.push('(f.CodCuenta LIKE @search OR f.Nomcuenta LIKE @search)');
   }
 
+  return conditions;
+}
+
+/**
+ * Core aggregation: one row per Sociedad + Cuenta + Anio + Mes with the summed
+ * "Importe divisa-adicional" (addCurrAmount) — this is the number both the
+ * pivot report and the dashboard build on top of. Deliberately does NOT join
+ * the companies view in SQL (see companiesCache.js for why) — CodEmpresa is
+ * translated to Sociedad/Pais in JS afterwards. Output shape is kept as
+ * {Sociedad, Pais, G_L_Account_No, G_L_Account_Name, Anio, Mes, Saldo,
+ * Movimientos} on purpose, so analytics.js and the frontend don't need to
+ * know about the real column names underneath.
+ */
+async function getMovementSummary(filters = {}) {
+  const movements = getMovementsView();
+  const dim = await companiesCache.loadCompanies();
+  const pool = await getPool();
+  const request = pool.request();
+
+  const conditions = addCommonFilterConditions(request, dim, filters);
+
   const query = `
     SELECT
-      ${sociedadExpr} AS Sociedad,
-      e.NomPais AS Pais,
+      f.CodEmpresa,
       f.CodCuenta AS G_L_Account_No,
       f.Nomcuenta AS G_L_Account_Name,
       CAST(f.Año AS INT) AS Anio,
@@ -120,14 +128,77 @@ async function getMovementSummary({ companies, countries, years, months, search 
       SUM(f.addCurrAmount) AS Saldo,
       COUNT(*) AS Movimientos
     FROM ${movements} f
-    LEFT JOIN ${companiesView} e ON e.CodEmpresa = f.CodEmpresa
     WHERE ${conditions.join(' AND ')}
-    GROUP BY ${sociedadExpr}, e.NomPais, f.CodCuenta, f.Nomcuenta, CAST(f.Año AS INT), CAST(f.Mes AS INT)
-    ORDER BY Sociedad, G_L_Account_No, Anio, Mes
+    GROUP BY f.CodEmpresa, f.CodCuenta, f.Nomcuenta, CAST(f.Año AS INT), CAST(f.Mes AS INT)
   `;
 
   const result = await request.query(query);
-  return result.recordset;
+  return result.recordset
+    .map((r) => ({
+      Sociedad: companiesCache.labelFor(r.CodEmpresa, dim),
+      Pais: companiesCache.countryFor(r.CodEmpresa, dim),
+      G_L_Account_No: r.G_L_Account_No,
+      G_L_Account_Name: r.G_L_Account_Name,
+      Anio: r.Anio,
+      Mes: r.Mes,
+      Saldo: r.Saldo,
+      Movimientos: r.Movimientos,
+    }))
+    .sort((a, b) => a.Sociedad.localeCompare(b.Sociedad) || a.G_L_Account_No.localeCompare(b.G_L_Account_No) || a.Anio - b.Anio || a.Mes - b.Mes);
 }
 
-module.exports = { getCompanies, getCountries, getYears, getMovementSummary };
+const DETAIL_ROW_LIMIT = 500;
+
+/**
+ * Transaction-level detail behind one pivot row (one Sociedad + Cuenta), scoped
+ * by the same filters applied to the summary so the numbers tie out to what
+ * was summed. Capped at DETAIL_ROW_LIMIT rows (most recent first) — `total`
+ * tells the caller whether it got truncated, so nothing is silently hidden.
+ */
+async function getMovementDetail({ company, accountNo, years, months } = {}) {
+  const movements = getMovementsView();
+  const dim = await companiesCache.loadCompanies();
+  const pool = await getPool();
+
+  const unknownMatch = String(company || '').match(companiesCache.UNKNOWN_LABEL_PATTERN);
+  const companyCodes = unknownMatch ? [unknownMatch[1]] : dim.byName.get(company) || [];
+  if (!companyCodes.length) return { total: 0, rows: [] };
+
+  function whereFor(request) {
+    const conditions = [`f.Año IS NOT NULL`, `f.Año <> ''`, `f.CodCuenta = @account`];
+    request.input('account', sql.NVarChar(60), accountNo);
+    const codesClause = addInClause(request, 'code', companyCodes, sql.NVarChar(80));
+    conditions.push(`f.CodEmpresa IN ${codesClause}`);
+
+    const yearsClause = addInClause(request, 'year', years, sql.Int);
+    if (yearsClause) conditions.push(`CAST(f.Año AS INT) IN ${yearsClause}`);
+    const monthsClause = addInClause(request, 'month', months, sql.Int);
+    if (monthsClause) conditions.push(`CAST(f.Mes AS INT) IN ${monthsClause}`);
+    return conditions.join(' AND ');
+  }
+
+  const countRequest = pool.request();
+  const countResult = await countRequest.query(`
+    SELECT COUNT(*) AS total FROM ${movements} f WHERE ${whereFor(countRequest)}
+  `);
+
+  const rowsRequest = pool.request();
+  const rowsResult = await rowsRequest.query(`
+    SELECT TOP ${DETAIL_ROW_LIMIT}
+      f.Fecha,
+      f.TipoDocumento,
+      f.NumDocumento,
+      f.Descripcion,
+      f.Importe,
+      f.addCurrAmount AS ImporteDivisa,
+      f.CodUsuario,
+      f.NomProyectoTarea
+    FROM ${movements} f
+    WHERE ${whereFor(rowsRequest)}
+    ORDER BY f.Fecha DESC, f.NumEntrada DESC
+  `);
+
+  return { total: countResult.recordset[0].total, rows: rowsResult.recordset };
+}
+
+module.exports = { getCompanies, getCountries, getYears, getMovementSummary, getMovementDetail };

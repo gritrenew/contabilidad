@@ -235,6 +235,26 @@ td.num, th.num { font-variant-numeric: tabular-nums; }
 
 .table-scroll { overflow: auto; max-height: 560px; border: 1px solid var(--border); border-radius: var(--radius-card); }
 
+/* ---------- Expandable detail rows ---------- */
+.expand-toggle {
+  width: 22px; height: 22px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.expand-toggle:hover { background: var(--surface-2); color: var(--text-primary); }
+tr.detail-row > td { padding: 0; background: var(--surface-2); }
+.detail-wrap { padding: 10px 14px 14px 44px; }
+.detail-wrap table { font-size: 12px; }
+.detail-wrap thead th { position: static; background: transparent; }
+.detail-wrap .hint { margin: 6px 0 0; }
+tr.pivot-row.expanded { background: var(--surface-2); }
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;

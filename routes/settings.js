@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const settingsStore = require('../src/settingsStore');
 const { testConnection, resetPool } = require('../src/db');
+const companiesCache = require('../src/companiesCache');
 
 router.get('/', (req, res) => {
   res.json(settingsStore.getMaskedSettings());
@@ -14,6 +15,7 @@ router.post('/', async (req, res) => {
     if (incoming.password === '••••••••') delete incoming.password;
     settingsStore.saveLocalSettings(incoming);
     await resetPool();
+    companiesCache.resetCache();
     res.json(settingsStore.getMaskedSettings());
   } catch (err) {
     res.status(400).json({ error: err.message });
