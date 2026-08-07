@@ -24,9 +24,4 @@ jobs:
         run: npm install
 
       - name: Build
-        run: |
-          if npm run | grep -q "build"; then
-            npm run build
-          else
-            echo "No build script defined; skipping build step"
-          fi
+        run: npm run build
