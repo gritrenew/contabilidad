@@ -1,13 +1,18 @@
 (async function () {
   const notConfigured = document.getElementById('not-configured');
   const appContent = document.getElementById('app-content');
+  const filterBar = document.getElementById('filter-bar');
   const loadingLine = document.getElementById('loading-line');
   const syncPill = document.getElementById('sync-pill');
 
-  const companySelect = document.getElementById('f-companies');
-  const yearSelect = document.getElementById('f-years');
+  const dateFromInput = document.getElementById('f-date-from');
+  const dateToInput = document.getElementById('f-date-to');
+  const countrySelect = document.getElementById('f-country');
+  const companySelect = document.getElementById('f-company');
+  const rankingSearch = document.getElementById('f-ranking-search');
 
   let charts = {};
+  let lastRanking = { topPositiveCompanies: [], topNegativeCompanies: [] };
 
   function themeColor(varName) {
     return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
@@ -71,7 +76,7 @@
           },
           {
             label: 'Gastos',
-            data: monthly.map((m) => m.gasto),
+            data: monthly.map((m) => Math.abs(m.gasto)),
             borderColor: themeColor('--series-2'),
             backgroundColor: themeColor('--series-2') + '1a',
             fill: true, tension: 0.25, borderWidth: 2, pointRadius: 3,
@@ -86,7 +91,7 @@
     destroyChart('resultado');
     const ctx = document.getElementById('chart-resultado');
     const good = themeColor('--series-1');
-    const bad = themeColor('--bad');
+    const bad = themeColor('--series-2');
     charts.resultado = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -114,7 +119,7 @@
         datasets: [{
           label: 'Saldo',
           data: sorted.map((a) => a.saldo),
-          backgroundColor: sorted.map((a) => (a.saldo >= 0 ? themeColor('--series-1') : themeColor('--bad'))),
+          backgroundColor: sorted.map((a) => (a.saldo >= 0 ? themeColor('--series-1') : themeColor('--series-2'))),
           borderRadius: 4,
           maxBarThickness: 16,
         }],
@@ -130,15 +135,17 @@
     });
   }
 
-  function renderRanking(topPositive, topNegative) {
+  function renderRanking() {
+    const term = rankingSearch.value.trim().toLowerCase();
+    const all = [...lastRanking.topPositiveCompanies, ...lastRanking.topNegativeCompanies]
+      .filter((c) => !term || c.sociedad.toLowerCase().includes(term));
     const el = document.getElementById('company-ranking');
-    const all = [...topPositive, ...topNegative];
-    if (!all.length) { el.innerHTML = '<div class="hint">Sin datos para los filtros seleccionados.</div>'; return; }
+    if (!all.length) { el.innerHTML = '<div class="hint">Sin resultados.</div>'; return; }
     const maxAbs = Math.max(...all.map((c) => Math.abs(c.resultado)), 1);
     el.innerHTML = all.map((c) => {
       const pct = Math.min(100, (Math.abs(c.resultado) / maxAbs) * 100);
       const positive = c.resultado >= 0;
-      const color = positive ? 'var(--series-1)' : 'var(--bad)';
+      const color = positive ? 'var(--series-1)' : 'var(--series-2)';
       const side = positive ? `left:50%; width:${pct / 2}%;` : `right:50%; width:${pct / 2}%;`;
       return `<div class="mono-row">
         <div class="name" title="${CTB.escapeHtml(c.sociedad)}">${CTB.escapeHtml(c.sociedad)}</div>
@@ -158,21 +165,29 @@
     loadingLine.style.display = 'block';
     try {
       const params = CTB.qs({
-        companies: CTB.selectedValues(companySelect),
-        years: CTB.selectedValues(yearSelect),
+        companies: companySelect.value ? [companySelect.value] : [],
+        countries: countrySelect.value ? [countrySelect.value] : [],
+        dateFrom: dateFromInput.value,
+        dateTo: dateToInput.value,
       });
       const data = await CTB.fetchJSON(`/api/dashboard${params ? '?' + params : ''}`);
+      setKpi('kpi-ingreso', data.kpis.ingreso);
+      setKpi('kpi-gasto', Math.abs(data.kpis.gasto));
+      setKpi('kpi-resultado', data.kpis.resultado, true);
+      const margen = data.kpis.ingreso ? (data.kpis.resultado / data.kpis.ingreso) * 100 : 0;
+      document.getElementById('kpi-margen').textContent = `${margen.toFixed(1)}%`;
+      document.getElementById('kpi-margen').className = 'value ' + (margen >= 0 ? 'positive' : 'negative');
+
       setKpi('kpi-activo', data.kpis.activo);
       setKpi('kpi-pasivo', data.kpis.pasivo);
       setKpi('kpi-patrimonio', data.kpis.patrimonio);
-      setKpi('kpi-resultado', data.kpis.resultado, true);
       document.getElementById('kpi-empresas').textContent = data.kpis.empresas;
-      document.getElementById('kpi-cuentas').textContent = data.kpis.cuentas;
 
       renderTrendChart(data.monthly);
       renderResultadoChart(data.monthly);
       renderAccountsChart(data.topAccounts);
-      renderRanking(data.topPositiveCompanies, data.topNegativeCompanies);
+      lastRanking = { topPositiveCompanies: data.topPositiveCompanies, topNegativeCompanies: data.topNegativeCompanies };
+      renderRanking();
 
       document.getElementById('last-updated').textContent =
         'Actualizado ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
@@ -184,11 +199,7 @@
   }
 
   document.getElementById('btn-apply').addEventListener('click', loadDashboard);
-  document.getElementById('btn-clear').addEventListener('click', () => {
-    Array.from(companySelect.options).forEach((o) => (o.selected = false));
-    Array.from(yearSelect.options).forEach((o) => (o.selected = false));
-    loadDashboard();
-  });
+  rankingSearch.addEventListener('input', renderRanking);
 
   try {
     const status = await CTB.fetchJSON('/api/status');
@@ -198,8 +209,20 @@
       return;
     }
     syncPill.textContent = 'Conectado';
+    filterBar.style.display = 'flex';
     appContent.style.display = 'block';
-    await CTB.populateFilters({ companySelect, yearSelect });
+
+    const [companies, countries, years] = await Promise.all([
+      CTB.fetchJSON('/api/companies'),
+      CTB.fetchJSON('/api/countries'),
+      CTB.fetchJSON('/api/years'),
+    ]);
+    companySelect.innerHTML = '<option value="">Empresa: todas</option>' + companies.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
+    countrySelect.innerHTML = '<option value="">País: todos</option>' + countries.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
+    if (years.length) {
+      dateFromInput.value = `${years[0]}-01-01`;
+      dateToInput.value = new Date().toISOString().slice(0, 10);
+    }
     await loadDashboard();
   } catch (err) {
     notConfigured.style.display = 'block';

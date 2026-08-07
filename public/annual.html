@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Grenergy · Reporte</title>
+<title>Grenergy · Vista Anual</title>
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -41,8 +41,8 @@
     <main class="page">
       <div class="page-header">
         <div>
-          <h1>Reporte por cuenta</h1>
-          <div class="subtitle">N° cuenta · Nombre de cuenta · Saldo (divisa adicional) por año y mes — multiempresa</div>
+          <h1>Vista Anual por cuenta</h1>
+          <div class="subtitle">Mismo formato que el Excel de origen: N° cuenta · Nombre cuenta, con Año arriba abarcando sus meses — una empresa a la vez</div>
         </div>
       </div>
 
@@ -53,26 +53,14 @@
 
       <div id="app-content" style="display:none;">
         <div class="filter-bar">
-          <div class="field" style="min-width:240px;">
-            <label>Empresas</label>
-            <select id="f-companies" multiple size="4"></select>
-          </div>
-          <div class="field" style="min-width:160px;">
-            <label>País</label>
-            <select id="f-countries" multiple size="4"></select>
+          <div class="field" style="min-width:280px;">
+            <label>Empresa</label>
+            <select id="f-company"></select>
           </div>
           <div class="field">
             <label>Años</label>
             <select id="f-years" multiple size="4"></select>
-          </div>
-          <div class="field">
-            <label>Meses</label>
-            <select id="f-months" multiple size="4">
-              <option value="1">Ene</option><option value="2">Feb</option><option value="3">Mar</option>
-              <option value="4">Abr</option><option value="5">May</option><option value="6">Jun</option>
-              <option value="7">Jul</option><option value="8">Ago</option><option value="9">Sep</option>
-              <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
-            </select>
+            <span class="hint">Vacío = todos los años disponibles</span>
           </div>
           <div class="field">
             <label>Rubro</label>
@@ -91,7 +79,6 @@
             <input type="text" id="f-search" placeholder="Buscar cuenta (N° o nombre)..." />
           </div>
           <button class="btn accent" id="btn-apply">Aplicar filtros</button>
-          <button class="btn secondary" id="btn-clear">Limpiar</button>
           <div class="spacer"></div>
           <button class="btn secondary" id="btn-export">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -100,17 +87,16 @@
         </div>
 
         <div id="loading-line" class="loading-line" style="display:none; margin-bottom:16px;"></div>
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-          <div class="hint" id="row-count" style="margin:0;"></div>
-          <div class="spacer"></div>
-          <button class="btn secondary" id="btn-expand-all">Expandir todo</button>
-          <button class="btn secondary" id="btn-collapse-all">Colapsar todo</button>
-        </div>
+        <div class="hint" id="row-count" style="margin-bottom:8px;"></div>
 
         <div class="table-scroll">
           <table id="pivot-table">
-            <thead><tr id="pivot-head"></tr></thead>
+            <thead>
+              <tr id="pivot-head-years"></tr>
+              <tr id="pivot-head-months"></tr>
+            </thead>
             <tbody id="pivot-body"></tbody>
+            <tfoot id="pivot-foot"></tfoot>
           </table>
         </div>
       </div>
@@ -119,6 +105,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/report.js"></script>
+<script src="/js/annual.js"></script>
 </body>
 </html>

@@ -72,8 +72,19 @@ async function getYears() {
   return result.recordset.map((r) => r.Anio);
 }
 
-/** Shared WHERE-clause builder for the period/company/country/search filters every list query accepts. */
-function addCommonFilterConditions(request, dim, { companies, countries, years, months, search } = {}) {
+/**
+ * Shared WHERE-clause builder for the period/company/country/search filters
+ * every list query accepts. Two ways to scope by period, usable independently
+ * or together:
+ *  - years/months: discrete IN-lists (Reporte/Vista Anual — pick specific,
+ *    possibly non-contiguous years and months).
+ *  - periodFrom/periodTo: a true continuous range as a YYYYMM integer (e.g.
+ *    202512 for Dec 2025). This is NOT the same as years IN (...) AND months
+ *    IN (...): that combination would also match e.g. Jan 2025 when the range
+ *    is Dec 2025 - Jun 2026, because the year and month lists are independent
+ *    of each other. The Dashboard's date-range picker needs the real range.
+ */
+function addCommonFilterConditions(request, dim, { companies, countries, years, months, periodFrom, periodTo, search } = {}) {
   const conditions = [`f.Año IS NOT NULL`, `f.Año <> ''`];
 
   const companiesCondition = addResolvedCodeClause(request, 'company', companies, (names) =>
@@ -91,6 +102,18 @@ function addCommonFilterConditions(request, dim, { companies, countries, years, 
 
   const monthsClause = addInClause(request, 'month', months, sql.Int);
   if (monthsClause) conditions.push(`CAST(f.Mes AS INT) IN ${monthsClause}`);
+
+  if (periodFrom || periodTo) {
+    const periodExpr = `(CAST(f.Año AS INT) * 100 + CAST(f.Mes AS INT))`;
+    if (periodFrom) {
+      request.input('periodFrom', sql.Int, periodFrom);
+      conditions.push(`${periodExpr} >= @periodFrom`);
+    }
+    if (periodTo) {
+      request.input('periodTo', sql.Int, periodTo);
+      conditions.push(`${periodExpr} <= @periodTo`);
+    }
+  }
 
   if (search) {
     request.input('search', sql.NVarChar(200), `%${search}%`);

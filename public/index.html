@@ -3,93 +3,177 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Contabilidad · Dashboard Ejecutivo</title>
+<title>Grenergy · Panel Financiero</title>
 <link rel="stylesheet" href="/css/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><span class="mark"></span> Contabilidad · Grupo</div>
-  <nav class="nav-links">
-    <a href="/">Dashboard</a>
-    <a href="/report.html">Reporte</a>
-    <a href="/settings.html">Mantenedor</a>
-  </nav>
-  <div class="top-actions">
-    <span class="env-pill" id="sync-pill">—</span>
-    <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">☽</button>
-  </div>
-</header>
-
-<main class="page">
-  <div class="page-header">
-    <div>
-      <h1>Dashboard Ejecutivo</h1>
-      <div class="subtitle">Consolidado multiempresa desde Business Central · Importe en divisa adicional</div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">G</span>
+      <div class="brand-text"><strong>Grenergy</strong><span>Panel Financiero</span></div>
     </div>
-  </div>
+    <nav class="sidebar-nav nav-links">
+      <a href="/" class="active">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        <span class="nav-label">Resumen</span>
+      </a>
+      <a href="/report.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+        <span class="nav-label">Reporte</span>
+      </a>
+      <a href="/annual.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="nav-label">Vista Anual</span>
+      </a>
+      <a href="/settings.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Mantenedor</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">☽</button>
+      <span class="env-pill" id="sync-pill">—</span>
+    </div>
+  </aside>
 
-  <div id="not-configured" class="empty-state card" style="display:none;">
-    <h3>La conexión aún no está configurada</h3>
-    <p>Ve a <a href="/settings.html">Mantenedor</a> para ingresar el servidor, base de datos y credenciales de Business Central.</p>
-  </div>
-
-  <div id="app-content" style="display:none;">
-    <div class="filter-bar">
-      <div class="field" style="min-width:260px;">
-        <label>Empresas</label>
-        <select id="f-companies" multiple size="4"></select>
+  <div class="main-area">
+    <header class="topbar-filters" id="filter-bar" style="display:none;">
+      <span class="filters-label">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        Filtros
+      </span>
+      <div class="pill-field date-field">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <input type="date" id="f-date-from" />
       </div>
-      <div class="field">
-        <label>Años</label>
-        <select id="f-years" multiple size="4"></select>
+      <span class="hint">a</span>
+      <div class="pill-field date-field">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <input type="date" id="f-date-to" />
       </div>
-      <button class="btn" id="btn-apply">Actualizar</button>
-      <button class="btn secondary" id="btn-clear">Limpiar</button>
+      <div class="pill-field">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <select id="f-country"><option value="">País: todos</option></select>
+      </div>
+      <div class="pill-field">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+        <select id="f-company"><option value="">Empresa: todas</option></select>
+      </div>
       <div class="spacer"></div>
-      <span class="last-sync" id="last-updated"></span>
-    </div>
+      <button class="btn accent" id="btn-apply">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Actualizar
+      </button>
+    </header>
 
-    <div id="loading-line" class="loading-line" style="display:none; margin-bottom:16px;"></div>
-
-    <p class="hint" style="margin:-6px 0 14px;">Activo / Pasivo / Patrimonio / Resultado se calculan solo para empresas de <strong>Chile</strong> (plan de cuentas validado). España y Colombia usan otra convención de cuentas y por ahora solo se ven completas en el <a href="/report.html">Reporte</a>.</p>
-
-    <div class="kpi-row">
-      <div class="kpi-tile"><div class="label">Total Activo</div><div class="value" id="kpi-activo">—</div></div>
-      <div class="kpi-tile"><div class="label">Total Pasivo</div><div class="value" id="kpi-pasivo">—</div></div>
-      <div class="kpi-tile"><div class="label">Patrimonio</div><div class="value" id="kpi-patrimonio">—</div></div>
-      <div class="kpi-tile"><div class="label">Resultado del período</div><div class="value" id="kpi-resultado">—</div></div>
-      <div class="kpi-tile"><div class="label">Empresas con datos</div><div class="value" id="kpi-empresas">—</div></div>
-      <div class="kpi-tile"><div class="label">Cuentas con movimiento</div><div class="value" id="kpi-cuentas">—</div></div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <h3>Evolución mensual — Ingresos vs Gastos</h3>
-        <div class="card-sub">Suma de importe en divisa adicional por mes de registro</div>
-        <canvas id="chart-trend" height="110"></canvas>
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <h1>Resumen Ejecutivo</h1>
+          <div class="subtitle">Vista general del rendimiento financiero · Grupo Grenergy</div>
+        </div>
+        <span class="last-sync" id="last-updated"></span>
       </div>
-      <div class="card">
-        <h3>Resultado mensual</h3>
-        <div class="card-sub">Ingresos + Gastos del mes (positivo = favorable)</div>
-        <canvas id="chart-resultado" height="110"></canvas>
-      </div>
-    </div>
 
-    <div class="grid-2b">
-      <div class="card">
-        <h3>Top 10 cuentas por magnitud de saldo</h3>
-        <div class="card-sub">Todas las empresas y períodos seleccionados</div>
-        <canvas id="chart-accounts" height="230"></canvas>
+      <div id="not-configured" class="empty-state card" style="display:none;">
+        <h3>La conexión aún no está configurada</h3>
+        <p>Ve a <a href="/settings.html">Mantenedor</a> para ingresar el servidor, base de datos y credenciales de Business Central.</p>
       </div>
-      <div class="card">
-        <h3>Ranking de empresas por resultado</h3>
-        <div class="card-sub">5 con mejor resultado y 5 con peor resultado</div>
-        <div class="mono-list" id="company-ranking"></div>
+
+      <div id="app-content" style="display:none;">
+        <div id="loading-line" class="loading-line" style="display:none; margin-bottom:16px;"></div>
+
+        <div class="kpi-row">
+          <div class="kpi-tile tone-ingreso">
+            <div class="icon-row">
+              <span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+              <span class="label">Ingresos</span>
+            </div>
+            <div class="value" id="kpi-ingreso">—</div>
+          </div>
+          <div class="kpi-tile tone-gasto">
+            <div class="icon-row">
+              <span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></span>
+              <span class="label">Gastos</span>
+            </div>
+            <div class="value" id="kpi-gasto">—</div>
+          </div>
+          <div class="kpi-tile tone-neutral">
+            <div class="icon-row">
+              <span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></span>
+              <span class="label">Resultado neto</span>
+            </div>
+            <div class="value" id="kpi-resultado">—</div>
+          </div>
+          <div class="kpi-tile tone-margen">
+            <div class="icon-row">
+              <span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></span>
+              <span class="label">Margen</span>
+            </div>
+            <div class="value" id="kpi-margen">—</div>
+          </div>
+        </div>
+
+        <p class="hint" style="margin:-6px 0 10px;">Estos 4 indicadores y el Resultado se calculan solo con empresas de <strong>Chile</strong> (plan de cuentas validado). España y Colombia se ven completas en el <a href="/report.html">Reporte</a>.</p>
+
+        <div class="kpi-row" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="kpi-tile tone-count">
+            <div class="icon-row"><span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/></svg></span><span class="label">Total Activo</span></div>
+            <div class="value" id="kpi-activo">—</div>
+          </div>
+          <div class="kpi-tile tone-count">
+            <div class="icon-row"><span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="label">Total Pasivo</span></div>
+            <div class="value" id="kpi-pasivo">—</div>
+          </div>
+          <div class="kpi-tile tone-count">
+            <div class="icon-row"><span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="label">Patrimonio</span></div>
+            <div class="value" id="kpi-patrimonio">—</div>
+          </div>
+          <div class="kpi-tile tone-count">
+            <div class="icon-row"><span class="icon-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="label">Empresas con datos</span></div>
+            <div class="value" id="kpi-empresas">—</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Evolución mensual — Ingresos vs Gastos</h3>
+            <div class="card-sub">Suma de importe en divisa adicional por mes de registro</div>
+            <canvas id="chart-trend" height="110"></canvas>
+          </div>
+          <div class="card">
+            <h3>Resultado mensual</h3>
+            <div class="card-sub">Ingresos + Gastos del mes (positivo = favorable)</div>
+            <canvas id="chart-resultado" height="110"></canvas>
+          </div>
+        </div>
+
+        <div class="grid-2b">
+          <div class="card">
+            <h3>Top 10 cuentas por magnitud de saldo</h3>
+            <div class="card-sub">Todas las empresas y períodos seleccionados</div>
+            <canvas id="chart-accounts" height="230"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Ranking de empresas por resultado</h3>
+                <div class="card-sub">5 con mejor resultado y 5 con peor resultado</div>
+              </div>
+            </div>
+            <div class="search-field" style="margin-bottom:12px;">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="f-ranking-search" placeholder="Buscar empresa en el ranking..." />
+            </div>
+            <div class="mono-list" id="company-ranking"></div>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   </div>
-</main>
+</div>
 
 <script src="/js/common.js"></script>
 <script src="/js/dashboard.js"></script>

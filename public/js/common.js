@@ -62,12 +62,18 @@ const CTB = (() => {
     return `${MONTH_NAMES[Number(m) - 1]} ${y}`;
   }
 
+  // Repeats the key for arrays (?companies=A&companies=B) instead of joining with
+  // commas — a company/country name can itself contain a comma (e.g. Spanish
+  // legal entities like "X, S.L." or "AYORA 123KV RENOVABLES, A.I.E."), and a
+  // comma-joined value would get mis-split back into two bogus filter values.
   function qs(params) {
     const usp = new URLSearchParams();
     Object.entries(params).forEach(([key, val]) => {
       if (val === undefined || val === null || val === '') return;
       if (Array.isArray(val)) {
-        if (val.length) usp.set(key, val.join(','));
+        val.forEach((v) => {
+          if (v !== undefined && v !== null && v !== '') usp.append(key, v);
+        });
       } else {
         usp.set(key, val);
       }
@@ -101,7 +107,7 @@ const CTB = (() => {
     return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  return { initTheme, markActiveNav, fetchJSON, fmtMoney, fmtCompact, fmtPeriod, qs, selectedValues, populateFilters, escapeHtml };
+  return { initTheme, markActiveNav, fetchJSON, fmtMoney, fmtCompact, fmtPeriod, qs, selectedValues, populateFilters, escapeHtml, MONTH_NAMES };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -3,106 +3,126 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Contabilidad · Mantenedor</title>
+<title>Grenergy · Mantenedor</title>
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><span class="mark"></span> Contabilidad · Grupo</div>
-  <nav class="nav-links">
-    <a href="/">Dashboard</a>
-    <a href="/report.html">Reporte</a>
-    <a href="/settings.html">Mantenedor</a>
-  </nav>
-  <div class="top-actions">
-    <span class="env-pill" id="sync-pill">—</span>
-    <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">☽</button>
-  </div>
-</header>
-
-<main class="page" style="max-width:760px;">
-  <div class="page-header">
-    <div>
-      <h1>Mantenedor de conexión</h1>
-      <div class="subtitle">Servidor, base de datos y vista de origen (Business Central / dwh)</div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">G</span>
+      <div class="brand-text"><strong>Grenergy</strong><span>Panel Financiero</span></div>
     </div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin-bottom:14px;">Parámetros de conexión</h3>
-    <div class="form-grid" id="settings-form">
-      <div class="field">
-        <label>Servidor <span class="badge env" id="badge-server" style="display:none;">Azure</span></label>
-        <input type="text" id="s-server" placeholder="mi-servidor.database.windows.net" />
-      </div>
-      <div class="field">
-        <label>Puerto <span class="badge env" id="badge-port" style="display:none;">Azure</span></label>
-        <input type="number" id="s-port" placeholder="1433" />
-      </div>
-      <div class="field">
-        <label>Base de datos <span class="badge env" id="badge-database" style="display:none;">Azure</span></label>
-        <input type="text" id="s-database" placeholder="BC_DWH" />
-      </div>
-      <div class="field">
-        <label>Usuario <span class="badge env" id="badge-user" style="display:none;">Azure</span></label>
-        <input type="text" id="s-user" placeholder="usuario_lectura" />
-      </div>
-      <div class="field">
-        <label>Contraseña <span class="badge env" id="badge-password" style="display:none;">Azure</span></label>
-        <input type="password" id="s-password" placeholder="••••••••" />
-      </div>
-      <div class="field">
-        <label>Vista de movimientos <span class="badge env" id="badge-view" style="display:none;">Azure</span></label>
-        <input type="text" id="s-view" placeholder="dwh.FIN_VW_PBI_TH_MovimientosContabilidad" />
-      </div>
-      <div class="field">
-        <label>Vista de empresas <span class="badge env" id="badge-companiesView" style="display:none;">Azure</span></label>
-        <input type="text" id="s-companiesView" placeholder="dwh.FIN_VW_PBI_TD_Empresas" />
-        <span class="hint">Tabla/vista que traduce CodEmpresa (GUID) a nombre y país.</span>
-      </div>
+    <nav class="sidebar-nav nav-links">
+      <a href="/">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        <span class="nav-label">Resumen</span>
+      </a>
+      <a href="/report.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+        <span class="nav-label">Reporte</span>
+      </a>
+      <a href="/annual.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="nav-label">Vista Anual</span>
+      </a>
+      <a href="/settings.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">Mantenedor</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">☽</button>
+      <span class="env-pill" id="sync-pill">—</span>
     </div>
+  </aside>
 
-    <div class="form-grid" style="margin-top:14px;">
-      <div class="checkbox-field">
-        <input type="checkbox" id="s-encrypt" />
-        <label for="s-encrypt">Cifrar conexión (Azure SQL / recomendado)</label>
-        <span class="badge env" id="badge-encrypt" style="display:none;">Azure</span>
+  <div class="main-area">
+    <main class="page" style="max-width:760px;">
+      <div class="page-header">
+        <div>
+          <h1>Mantenedor de conexión</h1>
+          <div class="subtitle">Servidor, base de datos y vista de origen (Business Central / dwh)</div>
+        </div>
       </div>
-      <div class="checkbox-field">
-        <input type="checkbox" id="s-trustServerCertificate" />
-        <label for="s-trustServerCertificate">Confiar en certificado del servidor (solo redes internas)</label>
-        <span class="badge env" id="badge-trustServerCertificate" style="display:none;">Azure</span>
+
+      <div class="card">
+        <h3 style="margin-bottom:14px;">Parámetros de conexión</h3>
+        <div class="form-grid" id="settings-form">
+          <div class="field">
+            <label>Servidor <span class="badge env" id="badge-server" style="display:none;">Azure</span></label>
+            <input type="text" id="s-server" placeholder="mi-servidor.database.windows.net" />
+          </div>
+          <div class="field">
+            <label>Puerto <span class="badge env" id="badge-port" style="display:none;">Azure</span></label>
+            <input type="number" id="s-port" placeholder="1433" />
+          </div>
+          <div class="field">
+            <label>Base de datos <span class="badge env" id="badge-database" style="display:none;">Azure</span></label>
+            <input type="text" id="s-database" placeholder="BC_DWH" />
+          </div>
+          <div class="field">
+            <label>Usuario <span class="badge env" id="badge-user" style="display:none;">Azure</span></label>
+            <input type="text" id="s-user" placeholder="usuario_lectura" />
+          </div>
+          <div class="field">
+            <label>Contraseña <span class="badge env" id="badge-password" style="display:none;">Azure</span></label>
+            <input type="password" id="s-password" placeholder="••••••••" />
+          </div>
+          <div class="field">
+            <label>Vista de movimientos <span class="badge env" id="badge-view" style="display:none;">Azure</span></label>
+            <input type="text" id="s-view" placeholder="dwh.FIN_VW_PBI_TH_MovimientosContabilidad" />
+          </div>
+          <div class="field">
+            <label>Vista de empresas <span class="badge env" id="badge-companiesView" style="display:none;">Azure</span></label>
+            <input type="text" id="s-companiesView" placeholder="dwh.FIN_VW_PBI_TD_Empresas" />
+            <span class="hint">Tabla/vista que traduce CodEmpresa (GUID) a nombre y país.</span>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:14px;">
+          <div class="checkbox-field">
+            <input type="checkbox" id="s-encrypt" />
+            <label for="s-encrypt">Cifrar conexión (Azure SQL / recomendado)</label>
+            <span class="badge env" id="badge-encrypt" style="display:none;">Azure</span>
+          </div>
+          <div class="checkbox-field">
+            <input type="checkbox" id="s-trustServerCertificate" />
+            <label for="s-trustServerCertificate">Confiar en certificado del servidor (solo redes internas)</label>
+            <span class="badge env" id="badge-trustServerCertificate" style="display:none;">Azure</span>
+          </div>
+        </div>
+
+        <p class="hint">Los campos marcados <span class="badge env">Azure</span> están fijados por una variable de entorno de Azure App Service (Application Settings) y no se pueden editar aquí — cámbialas en el portal de Azure. El resto se guarda cifrado en este servidor.</p>
+
+        <div class="form-actions">
+          <button class="btn secondary" id="btn-test">Probar conexión</button>
+          <button class="btn accent" id="btn-save">Guardar</button>
+          <span class="badge" id="configured-badge"></span>
+        </div>
+
+        <div id="result" style="display:none;"></div>
       </div>
-    </div>
 
-    <p class="hint">Los campos marcados <span class="badge env">Azure</span> están fijados por una variable de entorno de Azure App Service (Application Settings) y no se pueden editar aquí — cámbialas en el portal de Azure. El resto se guarda cifrado en este servidor.</p>
-
-    <div class="form-actions">
-      <button class="btn secondary" id="btn-test">Probar conexión</button>
-      <button class="btn" id="btn-save">Guardar</button>
-      <span class="badge" id="configured-badge"></span>
-    </div>
-
-    <div id="result" style="display:none;"></div>
+      <div class="card" style="margin-top:16px;">
+        <h3>Cómo funciona</h3>
+        <p class="hint">
+          Esta app se conecta de solo lectura a la vista configurada arriba y agrega los movimientos por
+          Sociedad, N° de cuenta, año y mes usando el campo Importe divisa-adicional
+          (Additional_Currency_Amount). El Dashboard y el Reporte consumen ese mismo dato agregado.
+        </p>
+        <p class="hint">
+          Modelo híbrido de configuración: lo que guardes aquí se cifra y queda en este servidor para
+          uso diario. En producción (Azure Web App), puedes fijar las mismas variables como
+          <code>DB_SERVER</code>, <code>DB_PORT</code>, <code>DB_DATABASE</code>, <code>DB_USER</code>,
+          <code>DB_PASSWORD</code>, <code>DB_VIEW</code>, <code>DB_ENCRYPT</code>,
+          <code>DB_TRUST_CERT</code> en Application Settings de Azure — esas siempre ganan sobre lo
+          guardado aquí.
+        </p>
+      </div>
+    </main>
   </div>
-
-  <div class="card" style="margin-top:16px;">
-    <h3>Cómo funciona</h3>
-    <p class="hint">
-      Esta app se conecta de solo lectura a la vista configurada arriba y agrega los movimientos por
-      Sociedad, N° de cuenta, año y mes usando el campo Importe divisa-adicional
-      (Additional_Currency_Amount). El Dashboard y el Reporte consumen ese mismo dato agregado.
-    </p>
-    <p class="hint">
-      Modelo híbrido de configuración: lo que guardes aquí se cifra y queda en este servidor para
-      uso diario. En producción (Azure Web App), puedes fijar las mismas variables como
-      <code>DB_SERVER</code>, <code>DB_PORT</code>, <code>DB_DATABASE</code>, <code>DB_USER</code>,
-      <code>DB_PASSWORD</code>, <code>DB_VIEW</code>, <code>DB_ENCRYPT</code>,
-      <code>DB_TRUST_CERT</code> en Application Settings de Azure — esas siempre ganan sobre lo
-      guardado aquí.
-    </p>
-  </div>
-</main>
+</div>
 
 <script src="/js/common.js"></script>
 <script src="/js/settings.js"></script>
