@@ -2,6 +2,11 @@
   const syncPill = document.getElementById('sync-pill');
   const resultBox = document.getElementById('result');
   const configuredBadge = document.getElementById('configured-badge');
+  const notAdmin = document.getElementById('not-admin');
+  const notAdminMessage = document.getElementById('not-admin-message');
+  const appContent = document.getElementById('app-content');
+  const btnLogin = document.getElementById('btn-login');
+  const btnLogout = document.getElementById('btn-logout');
 
   const FIELDS = ['server', 'port', 'database', 'user', 'password', 'view', 'companiesView'];
   const CHECKBOXES = ['encrypt', 'trustServerCertificate'];
@@ -108,5 +113,21 @@
     }
   });
 
+  const status = await CTB.fetchJSON('/api/settings/whoami');
+  if (!status.isAdmin) {
+    appContent.style.display = 'none';
+    notAdmin.style.display = 'block';
+    if (status.email) {
+      notAdminMessage.textContent = `Conectado como ${status.email}, que no está autorizado para administrar la conexión. Contacta a TI si necesitas acceso.`;
+      btnLogout.style.display = 'inline-block';
+    } else {
+      notAdminMessage.textContent = 'Este módulo solo está disponible para administradores. Inicia sesión con tu cuenta Microsoft para continuar.';
+      btnLogin.href = '/.auth/login/aad?post_login_redirect_uri=/settings.html';
+      btnLogin.style.display = 'inline-block';
+    }
+    syncPill.textContent = 'Acceso restringido';
+    return;
+  }
+  appContent.style.display = 'block';
   await load();
 })();

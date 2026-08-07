@@ -46,6 +46,16 @@
         </div>
       </div>
 
+      <div class="card" id="not-admin" style="display:none;">
+        <h3 style="margin-bottom:14px;">Acceso restringido</h3>
+        <p class="hint" id="not-admin-message">Este módulo solo está disponible para administradores.</p>
+        <div class="form-actions">
+          <a class="btn accent" id="btn-login" href="#" style="display:none;">Iniciar sesión con Microsoft</a>
+          <a class="btn secondary" id="btn-logout" href="/.auth/logout?post_logout_redirect_uri=/" style="display:none;">Cerrar sesión</a>
+        </div>
+      </div>
+
+      <div id="app-content" style="display:none;">
       <div class="card">
         <h3 style="margin-bottom:14px;">Parámetros de conexión</h3>
         <div class="form-grid" id="settings-form">
@@ -119,6 +129,7 @@
           <code>DB_TRUST_CERT</code> en Application Settings de Azure — esas siempre ganan sobre lo
           guardado aquí.
         </p>
+      </div>
       </div>
     </main>
   </div>

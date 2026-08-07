@@ -3,6 +3,15 @@ const router = express.Router();
 const settingsStore = require('../src/settingsStore');
 const { testConnection, resetPool } = require('../src/db');
 const companiesCache = require('../src/companiesCache');
+const adminAuth = require('../src/adminAuth');
+
+// Public: lets every page (and settings.html itself) know whether to show/hide
+// the Mantenedor module, without needing admin rights just to ask.
+router.get('/whoami', (req, res) => {
+  res.json(adminAuth.getAuthStatus(req));
+});
+
+router.use(adminAuth.requireAdmin);
 
 router.get('/', (req, res) => {
   res.json(settingsStore.getMaskedSettings());

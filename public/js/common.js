@@ -31,6 +31,21 @@ const CTB = (() => {
     });
   }
 
+  // Hides the Mantenedor nav link for anyone who isn't one of the allowed admin
+  // accounts. This is a UX convenience only — the real gate is server-side
+  // (requireAdmin on /api/settings/*), since a hidden link never stops someone
+  // from typing the URL directly.
+  async function applyAdminVisibility() {
+    try {
+      const status = await fetchJSON('/api/settings/whoami');
+      if (!status.isAdmin) {
+        document.querySelectorAll('a[href="/settings.html"]').forEach((a) => { a.style.display = 'none'; });
+      }
+    } catch (err) {
+      // fail-open on the client; server-side check still applies
+    }
+  }
+
   async function fetchJSON(url, opts) {
     const res = await fetch(url, opts);
     const body = await res.json().catch(() => ({}));
@@ -107,10 +122,11 @@ const CTB = (() => {
     return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  return { initTheme, markActiveNav, fetchJSON, fmtMoney, fmtCompact, fmtPeriod, qs, selectedValues, populateFilters, escapeHtml, MONTH_NAMES };
+  return { initTheme, markActiveNav, applyAdminVisibility, fetchJSON, fmtMoney, fmtCompact, fmtPeriod, qs, selectedValues, populateFilters, escapeHtml, MONTH_NAMES };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
   CTB.initTheme();
   CTB.markActiveNav();
+  CTB.applyAdminVisibility();
 });
