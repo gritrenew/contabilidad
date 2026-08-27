@@ -188,6 +188,30 @@ router.post('/cierre/export', async (req, res) => {
   }
 });
 
+/** Raw transaction ledger (no aggregation) for the Movimientos report. Capped on screen at MOVEMENTS_LIST_LIMIT. */
+router.get('/movimientos', async (req, res) => {
+  try {
+    const result = await queries.getMovementsList(parseFilters(req.query));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/movimientos/export', async (req, res) => {
+  try {
+    const filters = parseFiltersFromBody(req.body.filters);
+    const { rows, truncated } = await queries.getMovementsList(filters, queries.MOVEMENTS_EXPORT_LIMIT);
+    const wb = excelExport.buildMovementsWorkbook({ rows, truncated });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="movimientos-${new Date().toISOString().slice(0, 10)}.xlsx"`);
+    await wb.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/detail', async (req, res) => {
   try {
     const { company, account } = req.query;

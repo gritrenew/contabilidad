@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Grenergy · Movimientos</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-root"></div>
+
+  <div class="main-area">
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <h1>Movimientos</h1>
+          <div class="subtitle">Listado de movimientos contables individuales — sin agrupar ni sumar por cuenta, todo el histórico disponible</div>
+        </div>
+      </div>
+
+      <div id="not-configured" class="empty-state card" style="display:none;">
+        <h3>La conexión aún no está configurada</h3>
+        <p>Ve a <a href="/settings.html">Mantenedor</a> para ingresar el servidor, base de datos y credenciales de Business Central.</p>
+      </div>
+
+      <div id="app-content" style="display:none;">
+        <div class="filter-bar">
+          <div class="field" style="min-width:220px;">
+            <label for="f-companies">Empresas</label>
+            <select id="f-companies" multiple size="4"></select>
+          </div>
+          <div class="field" style="min-width:160px;">
+            <label for="f-countries">País</label>
+            <select id="f-countries" multiple size="4"></select>
+          </div>
+          <div class="field" style="min-width:180px;">
+            <label for="f-grupos">Grupo</label>
+            <select id="f-grupos" multiple size="4"></select>
+          </div>
+          <div class="field">
+            <label for="f-years">Años</label>
+            <select id="f-years" multiple size="4"></select>
+          </div>
+          <div class="field">
+            <label for="f-months">Meses</label>
+            <select id="f-months" multiple size="4">
+              <option value="1">Ene</option><option value="2">Feb</option><option value="3">Mar</option>
+              <option value="4">Abr</option><option value="5">May</option><option value="6">Jun</option>
+              <option value="7">Jul</option><option value="8">Ago</option><option value="9">Sep</option>
+              <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
+            </select>
+          </div>
+          <div class="search-field" style="min-width:220px;">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="f-search" placeholder="Buscar cuenta (N° o nombre)..." aria-label="Buscar cuenta" />
+          </div>
+          <button class="btn accent" id="btn-apply">Aplicar filtros</button>
+          <button class="btn secondary" id="btn-clear">Limpiar</button>
+          <div class="spacer"></div>
+          <button class="btn secondary" id="btn-export-excel">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar Excel
+          </button>
+        </div>
+        <p class="hint" style="margin:-10px 0 14px;">Deja Empresas, País, Grupo, Años o Meses vacíos para incluir todo. La tabla en pantalla muestra un máximo de 500 filas — usa Exportar Excel para traer todo el histórico que calce con el filtro.</p>
+
+        <div id="error-banner" class="banner-error">
+          <span id="error-banner-text"></span>
+          <button class="btn secondary" id="error-banner-retry">Reintentar</button>
+        </div>
+
+        <div id="loading-line" class="loading-line" style="display:none; margin-bottom:16px;"></div>
+        <div class="hint" id="row-count" style="margin-bottom:8px;"></div>
+
+        <div class="table-scroll">
+          <table id="pivot-table">
+            <thead><tr id="pivot-head"></tr></thead>
+            <tbody id="pivot-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/movimientos.js"></script>
+</body>
+</html>

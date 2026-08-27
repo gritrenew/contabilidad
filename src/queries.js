@@ -345,7 +345,77 @@ async function getMovementDetailBulk(pairs, { years, months } = {}) {
   return { rows, truncated };
 }
 
+const MOVEMENTS_LIST_LIMIT = 500;
+const MOVEMENTS_EXPORT_LIMIT = 100000;
+
+/**
+ * Flat transaction list — no SUM, no GROUP BY, one row per individual
+ * movement — for the "Movimientos" report (raw ledger, not a balance pivot).
+ * Accepts the same filters as getMovementSummary (companies/countries/grupos/
+ * years/months/search), just without collapsing them into a Sociedad+Cuenta+
+ * período aggregate. `limit` defaults to the on-screen cap; pass
+ * MOVEMENTS_EXPORT_LIMIT for the Excel export, which needs to see much more
+ * of the history at once. `total` (from a separate COUNT(*) so it reflects the
+ * full match, not just what TOP returned) tells the caller whether it got
+ * truncated — same "never silently hide rows" rule as getMovementDetail.
+ */
+async function getMovementsList(filters = {}, limit = MOVEMENTS_LIST_LIMIT) {
+  const movements = getMovementsView();
+  const dim = await companiesCache.loadCompanies();
+  const pool = await getPool();
+
+  const countRequest = pool.request();
+  const countConditions = addCommonFilterConditions(countRequest, dim, filters);
+  const countResult = await countRequest.query(`
+    SELECT COUNT(*) AS total FROM ${movements} f WHERE ${countConditions.join(' AND ')}
+  `);
+
+  const rowsRequest = pool.request();
+  const rowsConditions = addCommonFilterConditions(rowsRequest, dim, filters);
+  const rowsResult = await rowsRequest.query(`
+    SELECT TOP ${limit}
+      f.CodEmpresa,
+      f.Fecha,
+      f.CodCuenta AS G_L_Account_No,
+      f.Nomcuenta AS G_L_Account_Name,
+      f.TipoDocumento,
+      f.NumDocumento,
+      f.Descripcion,
+      f.Importe,
+      f.addCurrAmount AS ImporteDivisa,
+      f.CodUsuario,
+      f.NomProyectoTarea
+    FROM ${movements} f
+    WHERE ${rowsConditions.join(' AND ')}
+    ORDER BY f.Fecha ASC, f.NumEntrada ASC
+  `);
+
+  const rows = rowsResult.recordset.map((r) => {
+    const sociedad = companiesCache.labelFor(r.CodEmpresa, dim);
+    const groupEntry = groupsStore.getEntry(sociedad);
+    return {
+      Sociedad: sociedad,
+      Pais: companiesCache.countryFor(r.CodEmpresa, dim),
+      Grupo: groupEntry.grupo || null,
+      Fecha: r.Fecha,
+      G_L_Account_No: r.G_L_Account_No,
+      G_L_Account_Name: r.G_L_Account_Name,
+      TipoDocumento: r.TipoDocumento,
+      NumDocumento: r.NumDocumento,
+      Descripcion: r.Descripcion,
+      Importe: r.Importe,
+      ImporteDivisa: r.ImporteDivisa,
+      CodUsuario: r.CodUsuario,
+      NomProyectoTarea: r.NomProyectoTarea,
+    };
+  });
+
+  const total = countResult.recordset[0].total;
+  return { total, rows, truncated: total > rows.length };
+}
+
 module.exports = {
   getCompanies, getCountries, getYears, getMovementSummary, getMovementDetail,
-  getCumulativeBalance, getMovementDetailBulk,
+  getCumulativeBalance, getMovementDetailBulk, getMovementsList,
+  MOVEMENTS_LIST_LIMIT, MOVEMENTS_EXPORT_LIMIT,
 };

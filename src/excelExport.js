@@ -153,4 +153,59 @@ function buildClosingBalanceWorkbook({ pivot, periodLabel }) {
   return wb;
 }
 
-module.exports = { buildReportWorkbook, buildClosingBalanceWorkbook };
+/** Flat transaction-list export (Movimientos): one row per movement, no aggregation. */
+function buildMovementsWorkbook({ rows, truncated }) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Grenergy · Panel Financiero';
+  wb.created = new Date();
+
+  const sheet = wb.addWorksheet('Movimientos');
+  sheet.columns = [
+    { header: 'Fecha', key: 'fecha', width: 12 },
+    { header: 'Empresa', key: 'sociedad', width: 32 },
+    { header: 'Grupo', key: 'grupo', width: 20 },
+    { header: 'País', key: 'pais', width: 14 },
+    { header: 'N° cuenta', key: 'accountNo', width: 14 },
+    { header: 'Nombre cuenta', key: 'name', width: 32 },
+    { header: 'Tipo documento', key: 'tipoDocumento', width: 16 },
+    { header: 'N° documento', key: 'numDocumento', width: 16 },
+    { header: 'Descripción', key: 'descripcion', width: 40 },
+    { header: 'Proyecto/Tarea', key: 'proyecto', width: 20 },
+    { header: 'Importe', key: 'importe', width: 14 },
+    { header: 'Importe divisa', key: 'importeDivisa', width: 14 },
+    { header: 'Usuario', key: 'usuario', width: 14 },
+  ];
+  styleHeaderRow(sheet.getRow(1));
+  sheet.getColumn('importe').numFmt = MONEY_FMT;
+  sheet.getColumn('importeDivisa').numFmt = MONEY_FMT;
+  sheet.getColumn('fecha').numFmt = 'dd/mm/yyyy';
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
+  sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columns.length } };
+
+  if (truncated) {
+    const note = sheet.addRow({ descripcion: 'Se alcanzó el límite de filas exportables — acota los filtros (empresa, grupo, año) para ver el resto.' });
+    note.font = { italic: true, color: { argb: 'FFDC2626' } };
+  }
+
+  rows.forEach((r) => {
+    sheet.addRow({
+      fecha: r.Fecha ? new Date(r.Fecha) : null,
+      sociedad: r.Sociedad,
+      grupo: r.Grupo || 'Sin grupo',
+      pais: r.Pais || '',
+      accountNo: r.G_L_Account_No,
+      name: r.G_L_Account_Name,
+      tipoDocumento: r.TipoDocumento || '',
+      numDocumento: r.NumDocumento || '',
+      descripcion: r.Descripcion || '',
+      proyecto: r.NomProyectoTarea || '',
+      importe: Number(r.Importe) || 0,
+      importeDivisa: Number(r.ImporteDivisa) || 0,
+      usuario: r.CodUsuario || '',
+    });
+  });
+
+  return wb;
+}
+
+module.exports = { buildReportWorkbook, buildClosingBalanceWorkbook, buildMovementsWorkbook };
