@@ -3,12 +3,14 @@ const path = require('path');
 
 const settingsRoutes = require('./routes/settings');
 const dataRoutes = require('./routes/data');
+const groupsRoutes = require('./routes/groups');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use('/api/settings', settingsRoutes);
+app.use('/api/groups', groupsRoutes);
 app.use('/api', dataRoutes);
 // no-cache on static assets: this app is edited/redeployed often and a stale
 // cached HTML/JS silently pairing with a newer file is a confusing failure mode.

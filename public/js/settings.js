@@ -129,5 +129,75 @@
     return;
   }
   appContent.style.display = 'block';
+  const connectedAs = document.getElementById('connected-as');
+  connectedAs.textContent = status.email ? `Conectado como ${status.email}` : 'Modo local (sin login) — acceso abierto solo en desarrollo.';
   await load();
+  await loadGroups();
 })();
+
+// ---------- Grupos de empresas ----------
+let groupsRows = []; // [{ name, grupo, tag }] — working copy edited in the table below
+
+function renderGroupsTable(filterTerm = '') {
+  const body = document.getElementById('groups-body');
+  const term = filterTerm.trim().toLowerCase();
+  const visible = groupsRows.filter((r) => !term || r.name.toLowerCase().includes(term));
+  document.getElementById('groups-count').textContent = `${groupsRows.length} empresa(s)`;
+  body.innerHTML = visible.map((r) => `
+    <tr data-name="${CTB.escapeHtml(r.name)}">
+      <td class="text">${CTB.escapeHtml(r.name)}</td>
+      <td class="text"><input type="text" class="groups-grupo" list="groups-datalist" value="${CTB.escapeHtml(r.grupo)}" style="width:100%;" /></td>
+      <td class="text"><input type="text" class="groups-tag" value="${CTB.escapeHtml(r.tag)}" style="width:100%;" /></td>
+    </tr>
+  `).join('');
+}
+
+function refreshGroupsDatalist() {
+  const distinct = Array.from(new Set(groupsRows.map((r) => r.grupo).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
+  document.getElementById('groups-datalist').innerHTML = distinct.map((g) => `<option value="${CTB.escapeHtml(g)}"></option>`).join('');
+}
+
+async function loadGroups() {
+  const data = await CTB.fetchJSON('/api/groups/admin');
+  groupsRows = data.rows;
+  renderGroupsTable();
+  refreshGroupsDatalist();
+}
+
+// Reads whatever is currently typed in the visible rows back into groupsRows.
+// Must run before every re-render (rebuilding #groups-body from groupsRows
+// would otherwise silently discard edits on rows the search box just hid) and
+// before saving.
+function syncGroupsFromDom() {
+  const byName = new Map(groupsRows.map((r) => [r.name, r]));
+  document.querySelectorAll('#groups-body tr').forEach((tr) => {
+    const name = tr.dataset.name;
+    const grupo = tr.querySelector('.groups-grupo').value.trim();
+    const tag = tr.querySelector('.groups-tag').value.trim();
+    byName.set(name, { name, grupo, tag });
+  });
+  groupsRows = Array.from(byName.values());
+}
+
+document.getElementById('groups-search').addEventListener('input', (e) => {
+  syncGroupsFromDom();
+  renderGroupsTable(e.target.value);
+});
+
+document.getElementById('btn-groups-save').addEventListener('click', async () => {
+  const resultEl = document.getElementById('groups-result');
+  syncGroupsFromDom();
+  try {
+    await CTB.fetchJSON('/api/groups/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: groupsRows }),
+    });
+    refreshGroupsDatalist();
+    resultEl.textContent = 'Guardado';
+    resultEl.className = 'badge ok';
+  } catch (err) {
+    resultEl.textContent = 'Error: ' + err.message;
+    resultEl.className = 'badge err';
+  }
+});

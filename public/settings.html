@@ -8,34 +8,7 @@
 </head>
 <body>
 <div class="app-shell">
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <span class="brand-mark">G</span>
-      <div class="brand-text"><strong>Grenergy</strong><span>Panel Financiero</span></div>
-    </div>
-    <nav class="sidebar-nav nav-links">
-      <a href="/">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-        <span class="nav-label">Resumen</span>
-      </a>
-      <a href="/report.html">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
-        <span class="nav-label">Reporte</span>
-      </a>
-      <a href="/annual.html">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span class="nav-label">Vista Anual</span>
-      </a>
-      <a href="/settings.html">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span class="nav-label">Mantenedor</span>
-      </a>
-    </nav>
-    <div class="sidebar-footer">
-      <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">☽</button>
-      <span class="env-pill" id="sync-pill">—</span>
-    </div>
-  </aside>
+  <div id="sidebar-root"></div>
 
   <div class="main-area">
     <main class="page" style="max-width:760px;">
@@ -56,35 +29,36 @@
       </div>
 
       <div id="app-content" style="display:none;">
+      <p class="hint" id="connected-as" style="margin:-4px 0 14px;"></p>
       <div class="card">
         <h3 style="margin-bottom:14px;">Parámetros de conexión</h3>
         <div class="form-grid" id="settings-form">
           <div class="field">
-            <label>Servidor <span class="badge env" id="badge-server" style="display:none;">Azure</span></label>
+            <label for="s-server">Servidor <span class="badge env" id="badge-server" style="display:none;">Azure</span></label>
             <input type="text" id="s-server" placeholder="mi-servidor.database.windows.net" />
           </div>
           <div class="field">
-            <label>Puerto <span class="badge env" id="badge-port" style="display:none;">Azure</span></label>
+            <label for="s-port">Puerto <span class="badge env" id="badge-port" style="display:none;">Azure</span></label>
             <input type="number" id="s-port" placeholder="1433" />
           </div>
           <div class="field">
-            <label>Base de datos <span class="badge env" id="badge-database" style="display:none;">Azure</span></label>
+            <label for="s-database">Base de datos <span class="badge env" id="badge-database" style="display:none;">Azure</span></label>
             <input type="text" id="s-database" placeholder="BC_DWH" />
           </div>
           <div class="field">
-            <label>Usuario <span class="badge env" id="badge-user" style="display:none;">Azure</span></label>
+            <label for="s-user">Usuario <span class="badge env" id="badge-user" style="display:none;">Azure</span></label>
             <input type="text" id="s-user" placeholder="usuario_lectura" />
           </div>
           <div class="field">
-            <label>Contraseña <span class="badge env" id="badge-password" style="display:none;">Azure</span></label>
+            <label for="s-password">Contraseña <span class="badge env" id="badge-password" style="display:none;">Azure</span></label>
             <input type="password" id="s-password" placeholder="••••••••" />
           </div>
           <div class="field">
-            <label>Vista de movimientos <span class="badge env" id="badge-view" style="display:none;">Azure</span></label>
+            <label for="s-view">Vista de movimientos <span class="badge env" id="badge-view" style="display:none;">Azure</span></label>
             <input type="text" id="s-view" placeholder="dwh.FIN_VW_PBI_TH_MovimientosContabilidad" />
           </div>
           <div class="field">
-            <label>Vista de empresas <span class="badge env" id="badge-companiesView" style="display:none;">Azure</span></label>
+            <label for="s-companiesView">Vista de empresas <span class="badge env" id="badge-companiesView" style="display:none;">Azure</span></label>
             <input type="text" id="s-companiesView" placeholder="dwh.FIN_VW_PBI_TD_Empresas" />
             <span class="hint">Tabla/vista que traduce CodEmpresa (GUID) a nombre y país.</span>
           </div>
@@ -129,6 +103,31 @@
           <code>DB_TRUST_CERT</code> en Application Settings de Azure — esas siempre ganan sobre lo
           guardado aquí.
         </p>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-head">
+          <div>
+            <h3>Grupos de empresas</h3>
+            <div class="card-sub">Clasificación libre (Holding, Individual, Grupo Palmas y spv's, etc.) usada para filtrar y subtotalizar en Reporte, Vista Anual y Saldo al Cierre.</div>
+          </div>
+          <span class="hint" id="groups-count"></span>
+        </div>
+        <div class="search-field" style="margin:14px 0;max-width:320px;">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="groups-search" placeholder="Buscar empresa..." aria-label="Buscar empresa" />
+        </div>
+        <datalist id="groups-datalist"></datalist>
+        <div class="table-scroll" style="max-height:420px;">
+          <table id="groups-table">
+            <thead><tr><th class="text">Empresa</th><th class="text">Grupo</th><th class="text">Etiqueta</th></tr></thead>
+            <tbody id="groups-body"></tbody>
+          </table>
+        </div>
+        <div class="form-actions">
+          <button class="btn accent" id="btn-groups-save">Guardar cambios</button>
+          <span class="badge" id="groups-result"></span>
+        </div>
       </div>
       </div>
     </main>

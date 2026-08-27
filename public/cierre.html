@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Grenergy · Vista Anual</title>
+<title>Grenergy · Saldo al Cierre</title>
 <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -14,8 +14,8 @@
     <main class="page">
       <div class="page-header">
         <div>
-          <h1>Vista Anual por cuenta</h1>
-          <div class="subtitle">Mismo formato que el Excel de origen: N° cuenta · Nombre cuenta, con Año arriba abarcando sus meses — una empresa a la vez</div>
+          <h1>Saldo al Cierre</h1>
+          <div class="subtitle">N° cuenta · Nombre cuenta, con cada Sociedad como columna — saldo acumulado desde el inicio de los datos hasta el mes de cierre elegido</div>
         </div>
       </div>
 
@@ -26,25 +26,21 @@
 
       <div id="app-content" style="display:none;">
         <div class="filter-bar">
-          <div class="field" style="min-width:260px;">
-            <label for="f-company">Empresa</label>
-            <select id="f-company"></select>
-          </div>
           <div class="field">
-            <label for="f-years">Años</label>
-            <select id="f-years" multiple size="4"></select>
+            <label for="f-period">Mes de cierre</label>
+            <select id="f-period"></select>
           </div>
-          <div class="field">
-            <label for="f-rubro">Rubro</label>
-            <select id="f-rubro">
-              <option value="">Todos</option>
-              <option value="Activo">Activo</option>
-              <option value="Pasivo">Pasivo</option>
-              <option value="Patrimonio">Patrimonio</option>
-              <option value="Ingreso">Ingreso</option>
-              <option value="Gasto">Gasto</option>
-              <option value="Otro">Otro</option>
-            </select>
+          <div class="field" style="min-width:160px;">
+            <label for="f-countries">País</label>
+            <select id="f-countries" multiple size="4"></select>
+          </div>
+          <div class="field" style="min-width:180px;">
+            <label for="f-grupos">Grupo</label>
+            <select id="f-grupos" multiple size="4"></select>
+          </div>
+          <div class="field" style="min-width:220px;">
+            <label for="f-companies">Empresas</label>
+            <select id="f-companies" multiple size="4"></select>
           </div>
           <div class="search-field" style="min-width:220px;">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -53,12 +49,12 @@
           <button class="btn accent" id="btn-apply">Aplicar filtros</button>
           <button class="btn secondary" id="btn-clear">Limpiar</button>
           <div class="spacer"></div>
-          <button class="btn secondary" id="btn-export">
+          <button class="btn secondary" id="btn-export-excel">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Exportar CSV
+            Exportar Excel
           </button>
         </div>
-        <p class="hint" style="margin:-10px 0 14px;">Años vacío = todos los años disponibles.</p>
+        <p class="hint" style="margin:-10px 0 14px;">Por defecto muestra las empresas de Chile. Acota con Grupo o Empresas para una tabla más manejable — con muchas empresas la tabla se desplaza horizontalmente.</p>
 
         <div id="error-banner" class="banner-error">
           <span id="error-banner-text"></span>
@@ -70,12 +66,8 @@
 
         <div class="table-scroll">
           <table id="pivot-table">
-            <thead>
-              <tr id="pivot-head-years"></tr>
-              <tr id="pivot-head-months"></tr>
-            </thead>
+            <thead><tr id="pivot-head"></tr></thead>
             <tbody id="pivot-body"></tbody>
-            <tfoot id="pivot-foot"></tfoot>
           </table>
         </div>
       </div>
@@ -84,6 +76,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/annual.js"></script>
+<script src="/js/cierre.js"></script>
 </body>
 </html>

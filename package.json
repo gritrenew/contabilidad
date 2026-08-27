@@ -13,6 +13,7 @@
     "build": "node -e \"console.log('Build completed successfully')\""
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "mssql": "^11.0.1"
   }

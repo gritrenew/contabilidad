@@ -150,6 +150,7 @@
   async function loadPivot() {
     if (!companySelect.value) return;
     loadingLine.style.display = 'block';
+    CTB.hideError();
     try {
       const params = CTB.qs({
         companies: [companySelect.value],
@@ -157,9 +158,13 @@
         search: searchInput.value.trim(),
       });
       lastResult = await CTB.fetchJSON(`/api/report${params ? '?' + params : ''}`);
+      const urlParams = new URLSearchParams(params);
+      if (rubroSelect.value) urlParams.set('rubro', rubroSelect.value); else urlParams.delete('rubro');
+      CTB.writeUrlParams(urlParams.toString());
       renderTable();
     } catch (err) {
-      rowCountEl.textContent = 'Error: ' + err.message;
+      rowCountEl.textContent = '';
+      CTB.showError('No se pudo cargar la vista anual: ' + err.message, loadPivot);
     } finally {
       loadingLine.style.display = 'none';
     }
@@ -167,6 +172,12 @@
 
   document.getElementById('btn-apply').addEventListener('click', loadPivot);
   document.getElementById('btn-export').addEventListener('click', exportCsv);
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    CTB.applySelection(yearSelect, []);
+    rubroSelect.value = '';
+    searchInput.value = '';
+    loadPivot();
+  });
   rubroSelect.addEventListener('change', renderTable);
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadPivot(); });
 
@@ -179,6 +190,9 @@
     }
     syncPill.textContent = 'Conectado';
     appContent.style.display = 'block';
+
+    CTB.enhanceMultiSelect(yearSelect, { label: 'Años' });
+
     const [companies] = await Promise.all([
       CTB.fetchJSON('/api/companies'),
       CTB.populateFilters({ yearSelect }),
@@ -188,8 +202,16 @@
     // meant for Reporte's multi-company view, not this single-company one: the
     // auto-picked company may simply have no data in that one year and the
     // page would open on a false "sin resultados".
-    Array.from(yearSelect.options).forEach((o) => (o.selected = false));
+    CTB.applySelection(yearSelect, []);
     companySelect.innerHTML = companies.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
+
+    // Restore from a shared/bookmarked link when present.
+    const url = CTB.readUrlParams();
+    if (url.has('companies')) companySelect.value = url.getAll('companies')[0] || '';
+    if (url.has('years')) CTB.applySelection(yearSelect, url.getAll('years'));
+    if (url.get('search')) searchInput.value = url.get('search');
+    if (url.get('rubro')) rubroSelect.value = url.get('rubro');
+
     await loadPivot();
   } catch (err) {
     notConfigured.style.display = 'block';

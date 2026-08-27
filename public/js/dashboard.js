@@ -1,7 +1,6 @@
 (async function () {
   const notConfigured = document.getElementById('not-configured');
   const appContent = document.getElementById('app-content');
-  const filterBar = document.getElementById('filter-bar');
   const loadingLine = document.getElementById('loading-line');
   const syncPill = document.getElementById('sync-pill');
 
@@ -161,16 +160,23 @@
     if (colorize) el.className = 'value ' + (value >= 0 ? 'positive' : 'negative');
   }
 
+  function currentParams() {
+    return {
+      companies: CTB.selectedValues(companySelect),
+      countries: CTB.selectedValues(countrySelect),
+      dateFrom: dateFromInput.value,
+      dateTo: dateToInput.value,
+    };
+  }
+
   async function loadDashboard() {
     loadingLine.style.display = 'block';
+    CTB.hideError();
     try {
-      const params = CTB.qs({
-        companies: companySelect.value ? [companySelect.value] : [],
-        countries: countrySelect.value ? [countrySelect.value] : [],
-        dateFrom: dateFromInput.value,
-        dateTo: dateToInput.value,
-      });
-      const data = await CTB.fetchJSON(`/api/dashboard${params ? '?' + params : ''}`);
+      const query = CTB.qs(currentParams());
+      const data = await CTB.fetchJSON(`/api/dashboard${query ? '?' + query : ''}`);
+      CTB.writeUrlParams(query);
+
       setKpi('kpi-ingreso', data.kpis.ingreso);
       setKpi('kpi-gasto', Math.abs(data.kpis.gasto));
       setKpi('kpi-resultado', data.kpis.resultado, true);
@@ -192,7 +198,7 @@
       document.getElementById('last-updated').textContent =
         'Actualizado ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
     } catch (err) {
-      document.getElementById('company-ranking').innerHTML = `<div class="hint">Error: ${CTB.escapeHtml(err.message)}</div>`;
+      CTB.showError('No se pudo cargar el resumen: ' + err.message, loadDashboard);
     } finally {
       loadingLine.style.display = 'none';
     }
@@ -209,18 +215,32 @@
       return;
     }
     syncPill.textContent = 'Conectado';
-    filterBar.style.display = 'flex';
     appContent.style.display = 'block';
+
+    CTB.enhanceMultiSelect(companySelect, { label: 'Empresa' });
+    CTB.enhanceMultiSelect(countrySelect, { label: 'País' });
 
     const [companies, countries, years] = await Promise.all([
       CTB.fetchJSON('/api/companies'),
       CTB.fetchJSON('/api/countries'),
       CTB.fetchJSON('/api/years'),
     ]);
-    companySelect.innerHTML = '<option value="">Empresa: todas</option>' + companies.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
-    countrySelect.innerHTML = '<option value="">País: todos</option>' + countries.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
-    if (years.length) {
-      dateFromInput.value = `${years[0]}-01-01`;
+    companySelect.innerHTML = companies.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
+    countrySelect.innerHTML = countries.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
+    CTB.refreshMultiSelect(companySelect);
+    CTB.refreshMultiSelect(countrySelect);
+
+    // Restore filters from a shared/bookmarked link when present; otherwise
+    // default to the most recent year (consistent with Reporte) rather than
+    // the full history, which would silently load every year on first paint.
+    const url = CTB.readUrlParams();
+    if (url.has('companies') || url.has('countries') || url.has('dateFrom') || url.has('dateTo')) {
+      CTB.applySelection(companySelect, url.getAll('companies'));
+      CTB.applySelection(countrySelect, url.getAll('countries'));
+      if (url.get('dateFrom')) dateFromInput.value = url.get('dateFrom');
+      if (url.get('dateTo')) dateToInput.value = url.get('dateTo');
+    } else if (years.length) {
+      dateFromInput.value = `${years[years.length - 1]}-01-01`;
       dateToInput.value = new Date().toISOString().slice(0, 10);
     }
     await loadDashboard();

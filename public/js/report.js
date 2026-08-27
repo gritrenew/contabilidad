@@ -7,6 +7,7 @@
 
   const companySelect = document.getElementById('f-companies');
   const countrySelect = document.getElementById('f-countries');
+  const grupoSelect = document.getElementById('f-grupos');
   const yearSelect = document.getElementById('f-years');
   const monthSelect = document.getElementById('f-months');
   const rubroSelect = document.getElementById('f-rubro');
@@ -17,15 +18,17 @@
   let lastAppliedFilters = { years: [], months: [] };
   let multiCompany = true;
   const detailCache = new Map(); // `${sociedad}||${accountNo}` -> detail response
+  const expandedPairs = new Map(); // `${sociedad}||${accountNo}` -> { company, accountNo } — rows currently expanded on screen, fed to Excel export
 
   function totalColumnCount() {
-    return 1 /* toggle */ + (multiCompany ? 1 : 0) + 2 /* cuenta, nombre */ + lastPivot.periods.length + 1 /* total */;
+    return 1 /* toggle */ + (multiCompany ? 2 : 0) /* empresa, grupo */ + 2 /* cuenta, nombre */ + lastPivot.periods.length + 1 /* total */;
   }
 
   function renderTable(pivot) {
     const filtered = rubroSelect.value ? pivot.items.filter((i) => i.rubro === rubroSelect.value) : pivot.items;
     currentFilteredItems = filtered;
     detailCache.clear();
+    expandedPairs.clear();
 
     const head = document.getElementById('pivot-head');
     const body = document.getElementById('pivot-body');
@@ -33,7 +36,7 @@
 
     head.innerHTML = `
       <th style="width:28px;"></th>
-      ${showCompanyCol ? '<th class="text">Empresa</th>' : ''}
+      ${showCompanyCol ? '<th class="text">Empresa</th><th class="text">Grupo</th>' : ''}
       <th class="text">N° cuenta</th>
       <th class="text">Nombre cuenta</th>
       ${pivot.periods.map((p) => `<th class="num">${CTB.fmtPeriod(p)}</th>`).join('')}
@@ -43,13 +46,14 @@
     if (!filtered.length) {
       body.innerHTML = `<tr><td colspan="${totalColumnCount()}" class="hint" style="text-align:center;padding:24px;">Sin resultados para los filtros seleccionados.</td></tr>`;
       rowCountEl.textContent = '0 cuentas';
+      renderGroupSummary();
       return;
     }
 
     body.innerHTML = filtered.map((item, idx) => `
       <tr class="pivot-row" data-idx="${idx}">
-        <td><button class="expand-toggle" data-idx="${idx}" title="Ver detalle de movimientos">▸</button></td>
-        ${showCompanyCol ? `<td class="text">${CTB.escapeHtml(item.sociedad)}</td>` : ''}
+        <td><button class="expand-toggle" data-idx="${idx}" title="Ver detalle de movimientos" aria-label="Ver detalle de movimientos" aria-expanded="false">▸</button></td>
+        ${showCompanyCol ? `<td class="text">${CTB.escapeHtml(item.sociedad)}</td><td class="text">${CTB.escapeHtml(item.grupo || 'Sin grupo')}</td>` : ''}
         <td class="text">${CTB.escapeHtml(item.accountNo)}</td>
         <td class="text">${CTB.escapeHtml(item.name || '')}</td>
         ${pivot.periods.map((p) => `<td class="num">${CTB.fmtMoney(item.periods[p] || 0, { decimals: 2 })}</td>`).join('')}
@@ -58,6 +62,38 @@
     `).join('');
 
     rowCountEl.textContent = `${filtered.length} cuenta(s) · ${pivot.periods.length} período(s)`;
+    renderGroupSummary();
+  }
+
+  /** "Resumen por Grupo" panel — computed client-side from the pivot already fetched, no extra request. */
+  function renderGroupSummary() {
+    const card = document.getElementById('group-summary-card');
+    if (!multiCompany || !currentFilteredItems.length) { card.style.display = 'none'; return; }
+
+    const byGroup = new Map();
+    currentFilteredItems.forEach((item) => {
+      const key = item.grupo || 'Sin grupo';
+      if (!byGroup.has(key)) byGroup.set(key, { grupo: key, periods: {}, total: 0 });
+      const bucket = byGroup.get(key);
+      Object.entries(item.periods).forEach(([p, v]) => { bucket.periods[p] = (bucket.periods[p] || 0) + v; });
+      bucket.total += item.total;
+    });
+    const groups = Array.from(byGroup.values()).sort((a, b) => a.grupo.localeCompare(b.grupo, 'es'));
+    if (groups.length <= 1) { card.style.display = 'none'; return; }
+
+    card.style.display = 'block';
+    document.getElementById('group-summary-head').innerHTML = `
+      <th class="text">Grupo</th>
+      ${lastPivot.periods.map((p) => `<th class="num">${CTB.fmtPeriod(p)}</th>`).join('')}
+      <th class="num">Total</th>
+    `;
+    document.getElementById('group-summary-body').innerHTML = groups.map((g) => `
+      <tr>
+        <td class="text">${CTB.escapeHtml(g.grupo)}</td>
+        ${lastPivot.periods.map((p) => `<td class="num">${CTB.fmtMoney(g.periods[p] || 0, { decimals: 2 })}</td>`).join('')}
+        <td class="num"><strong>${CTB.fmtMoney(g.total, { decimals: 2 })}</strong></td>
+      </tr>
+    `).join('');
   }
 
   function detailRowHtml(message) {
@@ -98,6 +134,7 @@
     if (!row) return;
     const item = currentFilteredItems[idx];
     btn.textContent = '▾';
+    btn.setAttribute('aria-expanded', 'true');
     row.classList.add('expanded');
     row.insertAdjacentHTML('afterend', detailRowHtml('Cargando movimientos…'));
 
@@ -116,6 +153,7 @@
       }
       const detailRow = row.nextElementSibling;
       if (detailRow) detailRow.querySelector('.detail-wrap').innerHTML = renderDetailContent(detail);
+      expandedPairs.set(cacheKey, { company: item.sociedad, accountNo: item.accountNo });
     } catch (err) {
       const detailRow = row.nextElementSibling;
       if (detailRow) detailRow.querySelector('.detail-wrap').innerHTML = `<div class="hint">Error: ${CTB.escapeHtml(err.message)}</div>`;
@@ -125,10 +163,13 @@
   function collapseRow(idx, btn) {
     const row = document.querySelector(`tr.pivot-row[data-idx="${idx}"]`);
     if (!row) return;
+    const item = currentFilteredItems[idx];
     btn.textContent = '▸';
+    btn.setAttribute('aria-expanded', 'false');
     row.classList.remove('expanded');
     const detailRow = row.nextElementSibling;
     if (detailRow && detailRow.classList.contains('detail-row')) detailRow.remove();
+    expandedPairs.delete(`${item.sociedad}||${item.accountNo}`);
   }
 
   document.getElementById('pivot-body').addEventListener('click', (e) => {
@@ -160,11 +201,12 @@
   function exportCsv() {
     const filtered = currentFilteredItems;
     if (!filtered.length) return;
-    const headers = [multiCompany ? 'Empresa' : null, 'N° cuenta', 'Nombre cuenta', ...lastPivot.periods, 'Total'].filter(Boolean);
+    const headers = [multiCompany ? 'Empresa' : null, multiCompany ? 'Grupo' : null, 'N° cuenta', 'Nombre cuenta', ...lastPivot.periods, 'Total'].filter(Boolean);
     const lines = [headers.join(';')];
     filtered.forEach((item) => {
       const row = [
         multiCompany ? item.sociedad : null,
+        multiCompany ? (item.grupo || 'Sin grupo') : null,
         item.accountNo,
         `"${(item.name || '').replace(/"/g, '""')}"`,
         ...lastPivot.periods.map((p) => String((item.periods[p] || 0)).replace('.', ',')),
@@ -181,26 +223,70 @@
     URL.revokeObjectURL(url);
   }
 
+  function currentFilterState() {
+    return {
+      companies: CTB.selectedValues(companySelect),
+      countries: CTB.selectedValues(countrySelect),
+      grupos: CTB.selectedValues(grupoSelect),
+      years: CTB.selectedValues(yearSelect),
+      months: CTB.selectedValues(monthSelect),
+      search: searchInput.value.trim(),
+    };
+  }
+
+  async function exportExcel() {
+    const btn = document.getElementById('btn-export-excel');
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Generando…';
+    try {
+      const res = await fetch('/api/report/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filters: currentFilterState(),
+          pairs: Array.from(expandedPairs.values()),
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Error ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte-contabilidad-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      CTB.showError('No se pudo generar el Excel: ' + err.message, exportExcel);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
   async function loadReport() {
     loadingLine.style.display = 'block';
+    CTB.hideError();
     try {
-      const companies = CTB.selectedValues(companySelect);
-      multiCompany = companies.length !== 1;
-      lastAppliedFilters = {
-        years: CTB.selectedValues(yearSelect),
-        months: CTB.selectedValues(monthSelect),
-      };
-      const params = CTB.qs({
-        companies,
-        countries: CTB.selectedValues(countrySelect),
-        years: lastAppliedFilters.years,
-        months: lastAppliedFilters.months,
-        search: searchInput.value.trim(),
-      });
+      const filterState = currentFilterState();
+      multiCompany = filterState.companies.length !== 1;
+      lastAppliedFilters = { years: filterState.years, months: filterState.months };
+      const params = CTB.qs(filterState);
       lastPivot = await CTB.fetchJSON(`/api/report${params ? '?' + params : ''}`);
+      // Rubro isn't a server-side filter (see renderTable) but is folded into the
+      // URL too so a shared link also restores it — the backend ignores unknown
+      // params. Built from the query string (not an object) so repeated keys
+      // like companies=A&companies=B survive instead of collapsing to one value.
+      const urlParams = new URLSearchParams(params);
+      if (rubroSelect.value) urlParams.set('rubro', rubroSelect.value); else urlParams.delete('rubro');
+      CTB.writeUrlParams(urlParams.toString());
       renderTable(lastPivot);
     } catch (err) {
-      rowCountEl.textContent = 'Error: ' + err.message;
+      rowCountEl.textContent = '';
+      CTB.showError('No se pudo cargar el reporte: ' + err.message, loadReport);
     } finally {
       loadingLine.style.display = 'none';
     }
@@ -208,13 +294,21 @@
 
   document.getElementById('btn-apply').addEventListener('click', loadReport);
   document.getElementById('btn-export').addEventListener('click', exportCsv);
+  document.getElementById('btn-export-excel').addEventListener('click', exportExcel);
+  document.getElementById('btn-toggle-group-summary').addEventListener('click', (e) => {
+    const wrap = document.getElementById('group-summary-wrap');
+    const collapsed = wrap.style.display === 'none';
+    wrap.style.display = collapsed ? 'block' : 'none';
+    e.target.textContent = collapsed ? 'Ocultar' : 'Mostrar';
+  });
   rubroSelect.addEventListener('change', () => renderTable(lastPivot));
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadReport(); });
   document.getElementById('btn-clear').addEventListener('click', () => {
-    Array.from(companySelect.options).forEach((o) => (o.selected = false));
-    Array.from(countrySelect.options).forEach((o) => (o.selected = false));
-    Array.from(yearSelect.options).forEach((o) => (o.selected = false));
-    Array.from(monthSelect.options).forEach((o) => (o.selected = false));
+    CTB.applySelection(companySelect, []);
+    CTB.applySelection(countrySelect, []);
+    CTB.applySelection(grupoSelect, []);
+    CTB.applySelection(yearSelect, []);
+    CTB.applySelection(monthSelect, []);
     rubroSelect.value = '';
     searchInput.value = '';
     loadReport();
@@ -229,9 +323,35 @@
     }
     syncPill.textContent = 'Conectado';
     appContent.style.display = 'block';
-    const countries = await CTB.fetchJSON('/api/countries');
+
+    CTB.enhanceMultiSelect(companySelect, { label: 'Empresas' });
+    CTB.enhanceMultiSelect(countrySelect, { label: 'País' });
+    CTB.enhanceMultiSelect(grupoSelect, { label: 'Grupo' });
+    CTB.enhanceMultiSelect(yearSelect, { label: 'Años' });
+    CTB.enhanceMultiSelect(monthSelect, { label: 'Meses' });
+
+    const [countries, groups] = await Promise.all([
+      CTB.fetchJSON('/api/countries'),
+      CTB.fetchJSON('/api/groups'),
+    ]);
     countrySelect.innerHTML = countries.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
+    CTB.refreshMultiSelect(countrySelect);
+    grupoSelect.innerHTML = groups.distinctGroups.map((g) => `<option value="${CTB.escapeHtml(g)}">${CTB.escapeHtml(g)}</option>`).join('');
+    CTB.refreshMultiSelect(grupoSelect);
     await CTB.populateFilters({ companySelect, yearSelect });
+
+    // Restore filters from a shared/bookmarked link when present; otherwise
+    // keep the existing default (most recent year, via populateFilters above).
+    const url = CTB.readUrlParams();
+    if (url.has('companies') || url.has('countries') || url.has('grupos') || url.has('years') || url.has('months') || url.has('rubro') || url.has('search')) {
+      CTB.applySelection(companySelect, url.getAll('companies'));
+      CTB.applySelection(countrySelect, url.getAll('countries'));
+      CTB.applySelection(grupoSelect, url.getAll('grupos'));
+      CTB.applySelection(yearSelect, url.getAll('years'));
+      CTB.applySelection(monthSelect, url.getAll('months'));
+      if (url.get('search')) searchInput.value = url.get('search');
+      if (url.get('rubro')) rubroSelect.value = url.get('rubro');
+    }
     await loadReport();
   } catch (err) {
     notConfigured.style.display = 'block';

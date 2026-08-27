@@ -128,6 +128,8 @@ function buildPivot(rows) {
       accountMap.set(rowKey, {
         sociedad: row.Sociedad,
         pais: row.Pais || null,
+        grupo: row.Grupo || null,
+        tag: row.Tag || null,
         accountNo: row.G_L_Account_No,
         name: row.G_L_Account_Name,
         rubro: classifyRubro(row.G_L_Account_No, row.Pais),
@@ -149,4 +151,53 @@ function buildPivot(rows) {
   return { periods, items };
 }
 
-module.exports = { classifyRubro, buildDashboard, buildPivot };
+/**
+ * Summarizes a pivot's items by Grupo (per-period + total), for the "Resumen
+ * por Grupo" panel on Reporte — computed client-side from data already
+ * fetched for the main table, so it needs no extra DB round trip. Items with
+ * no Grupo assigned in Mantenedor fall under "Sin grupo" rather than being
+ * dropped, so the subtotals always foot to the same grand total as the table.
+ */
+function buildGroupSummary(pivot) {
+  const groupMap = new Map();
+  for (const item of pivot.items) {
+    const key = item.grupo || 'Sin grupo';
+    if (!groupMap.has(key)) groupMap.set(key, { grupo: key, periods: {}, total: 0 });
+    const bucket = groupMap.get(key);
+    Object.entries(item.periods).forEach(([period, value]) => {
+      bucket.periods[period] = (bucket.periods[period] || 0) + value;
+    });
+    bucket.total += item.total;
+  }
+  return Array.from(groupMap.values()).sort((a, b) => a.grupo.localeCompare(b.grupo, 'es'));
+}
+
+/** Pivots cumulative-balance rows (Sociedad, Cuenta, Saldo — no period) into one row per account with Sociedad as columns. */
+function buildClosingBalancePivot(rows) {
+  const accountMap = new Map();
+  const companiesSet = new Set();
+
+  for (const row of rows) {
+    companiesSet.add(row.Sociedad);
+    const rowKey = `${row.G_L_Account_No}||${row.G_L_Account_Name}`;
+    if (!accountMap.has(rowKey)) {
+      accountMap.set(rowKey, {
+        accountNo: row.G_L_Account_No,
+        name: row.G_L_Account_Name,
+        balances: {},
+        total: 0,
+      });
+    }
+    const entry = accountMap.get(rowKey);
+    const saldo = Number(row.Saldo) || 0;
+    entry.balances[row.Sociedad] = (entry.balances[row.Sociedad] || 0) + saldo;
+    entry.total += saldo;
+  }
+
+  const companies = Array.from(companiesSet).sort((a, b) => a.localeCompare(b, 'es'));
+  const items = Array.from(accountMap.values()).sort((a, b) => a.accountNo.localeCompare(b.accountNo));
+
+  return { companies, items };
+}
+
+module.exports = { classifyRubro, buildDashboard, buildPivot, buildGroupSummary, buildClosingBalancePivot };
