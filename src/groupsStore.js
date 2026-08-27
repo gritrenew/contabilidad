@@ -1,13 +1,17 @@
 // Admin-editable mapping of company (by display name, same identifier used
 // everywhere else in this app — see companiesCache) to a business "Grupo"
 // classification (e.g. "Holding", "Grupo Palmas y spv's") plus an optional free
-// tag. Purely app-side metadata: the DWH view has no such column. Stored as a
-// plain local JSON file (not encrypted — it holds no credentials) so it
-// round-trips independently of the DB connection settings.
+// tag. Purely app-side metadata: the DWH view has no such column.
+//
+// Deliberately stored under config/ (committed to git), NOT under data/ (which
+// is gitignored because it holds encrypted DB credentials): this file has no
+// secrets, and the whole point of Mantenedor's Grupo editor is that an
+// assignment made once — locally or in Azure — should travel with the next
+// deploy instead of needing to be re-entered per environment.
 const fs = require('fs');
 const path = require('path');
 
-const FILE_PATH = path.join(__dirname, '..', 'data', 'company-groups.json');
+const FILE_PATH = path.join(__dirname, '..', 'config', 'company-groups.json');
 
 let cache = null; // Map<lowercased company name, { grupo, tag }>
 
