@@ -8,6 +8,7 @@
   const companySelect = document.getElementById('f-companies');
   const countrySelect = document.getElementById('f-countries');
   const grupoSelect = document.getElementById('f-grupos');
+  const accountSelect = document.getElementById('f-accounts');
   const yearSelect = document.getElementById('f-years');
   const monthSelect = document.getElementById('f-months');
   const rubroSelect = document.getElementById('f-rubro');
@@ -228,6 +229,7 @@
       companies: CTB.selectedValues(companySelect),
       countries: CTB.selectedValues(countrySelect),
       grupos: CTB.selectedValues(grupoSelect),
+      accounts: CTB.selectedValues(accountSelect),
       years: CTB.selectedValues(yearSelect),
       months: CTB.selectedValues(monthSelect),
       search: searchInput.value.trim(),
@@ -307,6 +309,7 @@
     CTB.applySelection(companySelect, []);
     CTB.applySelection(countrySelect, []);
     CTB.applySelection(grupoSelect, []);
+    CTB.applySelection(accountSelect, []);
     CTB.applySelection(yearSelect, []);
     CTB.applySelection(monthSelect, []);
     rubroSelect.value = '';
@@ -327,26 +330,31 @@
     CTB.enhanceMultiSelect(companySelect, { label: 'Empresas' });
     CTB.enhanceMultiSelect(countrySelect, { label: 'País' });
     CTB.enhanceMultiSelect(grupoSelect, { label: 'Grupo' });
+    CTB.enhanceMultiSelect(accountSelect, { label: 'Cuenta' });
     CTB.enhanceMultiSelect(yearSelect, { label: 'Años' });
     CTB.enhanceMultiSelect(monthSelect, { label: 'Meses' });
 
-    const [countries, groups] = await Promise.all([
+    const [countries, groups, accounts] = await Promise.all([
       CTB.fetchJSON('/api/countries'),
       CTB.fetchJSON('/api/groups'),
+      CTB.fetchJSON('/api/accounts'),
     ]);
     countrySelect.innerHTML = countries.map((c) => `<option value="${CTB.escapeHtml(c)}">${CTB.escapeHtml(c)}</option>`).join('');
     CTB.refreshMultiSelect(countrySelect);
     grupoSelect.innerHTML = groups.distinctGroups.map((g) => `<option value="${CTB.escapeHtml(g)}">${CTB.escapeHtml(g)}</option>`).join('');
     CTB.refreshMultiSelect(grupoSelect);
+    accountSelect.innerHTML = accounts.map((a) => `<option value="${CTB.escapeHtml(a.accountNo)}">${CTB.escapeHtml(a.accountNo)} · ${CTB.escapeHtml(a.name)}</option>`).join('');
+    CTB.refreshMultiSelect(accountSelect);
     await CTB.populateFilters({ companySelect, yearSelect });
 
     // Restore filters from a shared/bookmarked link when present; otherwise
     // keep the existing default (most recent year, via populateFilters above).
     const url = CTB.readUrlParams();
-    if (url.has('companies') || url.has('countries') || url.has('grupos') || url.has('years') || url.has('months') || url.has('rubro') || url.has('search')) {
+    if (url.has('companies') || url.has('countries') || url.has('grupos') || url.has('accounts') || url.has('years') || url.has('months') || url.has('rubro') || url.has('search')) {
       CTB.applySelection(companySelect, url.getAll('companies'));
       CTB.applySelection(countrySelect, url.getAll('countries'));
       CTB.applySelection(grupoSelect, url.getAll('grupos'));
+      CTB.applySelection(accountSelect, url.getAll('accounts'));
       CTB.applySelection(yearSelect, url.getAll('years'));
       CTB.applySelection(monthSelect, url.getAll('months'));
       if (url.get('search')) searchInput.value = url.get('search');

@@ -61,6 +61,20 @@ async function getCountries() {
   return Array.from(countries).sort();
 }
 
+/** Distinct (CodCuenta, Nomcuenta) pairs across the whole view, for the Cuenta filter's option list. */
+async function getAccounts() {
+  const movements = getMovementsView();
+  const pool = await getPool();
+  const result = await pool.request().query(`
+    SELECT CodCuenta AS accountNo, MAX(Nomcuenta) AS name
+    FROM ${movements}
+    WHERE CodCuenta IS NOT NULL AND CodCuenta <> ''
+    GROUP BY CodCuenta
+    ORDER BY CodCuenta
+  `);
+  return result.recordset.map((r) => ({ accountNo: r.accountNo, name: r.name || '' }));
+}
+
 async function getYears() {
   const movements = getMovementsView();
   const pool = await getPool();
@@ -85,7 +99,7 @@ async function getYears() {
  *    is Dec 2025 - Jun 2026, because the year and month lists are independent
  *    of each other. The Dashboard's date-range picker needs the real range.
  */
-function addCommonFilterConditions(request, dim, { companies, countries, years, months, periodFrom, periodTo, search, grupos } = {}) {
+function addCommonFilterConditions(request, dim, { companies, countries, years, months, periodFrom, periodTo, search, grupos, accounts } = {}) {
   const conditions = [`f.Año IS NOT NULL`, `f.Año <> ''`];
 
   // "Grupo" is app-side metadata (see groupsStore) with no column in the DWH
@@ -117,6 +131,11 @@ function addCommonFilterConditions(request, dim, { companies, countries, years, 
 
   const monthsClause = addInClause(request, 'month', months, sql.Int);
   if (monthsClause) conditions.push(`CAST(f.Mes AS INT) IN ${monthsClause}`);
+
+  // Dedicated pick-from-a-list account filter — complements (doesn't replace)
+  // the free-text `search` below, which stays a fuzzy substring match.
+  const accountsClause = addInClause(request, 'acct', accounts, sql.NVarChar(60));
+  if (accountsClause) conditions.push(`f.CodCuenta IN ${accountsClause}`);
 
   if (periodFrom || periodTo) {
     const periodExpr = `(CAST(f.Año AS INT) * 100 + CAST(f.Mes AS INT))`;
@@ -415,7 +434,7 @@ async function getMovementsList(filters = {}, limit = MOVEMENTS_LIST_LIMIT) {
 }
 
 module.exports = {
-  getCompanies, getCountries, getYears, getMovementSummary, getMovementDetail,
+  getCompanies, getCountries, getYears, getAccounts, getMovementSummary, getMovementDetail,
   getCumulativeBalance, getMovementDetailBulk, getMovementsList,
   MOVEMENTS_LIST_LIMIT, MOVEMENTS_EXPORT_LIMIT,
 };

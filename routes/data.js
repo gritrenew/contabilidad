@@ -26,6 +26,7 @@ function parseFilters(query) {
     companies: parseListParam(query.companies),
     countries: parseListParam(query.countries),
     grupos: parseListParam(query.grupos),
+    accounts: parseListParam(query.accounts),
     years: parseListParam(query.years).map(Number),
     months: parseListParam(query.months).map(Number),
     periodFrom: toYearMonthInt(query.dateFrom),
@@ -41,6 +42,7 @@ function parseFiltersFromBody(f = {}) {
     companies: arr(f.companies),
     countries: arr(f.countries),
     grupos: arr(f.grupos),
+    accounts: arr(f.accounts),
     years: arr(f.years).map(Number),
     months: arr(f.months).map(Number),
     periodFrom: f.periodFrom || undefined,
@@ -79,6 +81,14 @@ router.get('/years', async (req, res) => {
 router.get('/countries', async (req, res) => {
   try {
     res.json(await queries.getCountries());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/accounts', async (req, res) => {
+  try {
+    res.json(await queries.getAccounts());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

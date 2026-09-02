@@ -26,17 +26,21 @@
 
       <div id="app-content" style="display:none;">
         <div class="filter-bar">
-          <div class="field" style="min-width:220px;">
-            <label for="f-companies">Empresas</label>
-            <select id="f-companies" multiple size="4"></select>
-          </div>
           <div class="field" style="min-width:160px;">
             <label for="f-countries">País</label>
             <select id="f-countries" multiple size="4"></select>
           </div>
+          <div class="field" style="min-width:220px;">
+            <label for="f-companies">Empresas</label>
+            <select id="f-companies" multiple size="4"></select>
+          </div>
           <div class="field" style="min-width:180px;">
             <label for="f-grupos">Grupo</label>
             <select id="f-grupos" multiple size="4"></select>
+          </div>
+          <div class="field" style="min-width:200px;">
+            <label for="f-accounts">Cuenta</label>
+            <select id="f-accounts" multiple size="4"></select>
           </div>
           <div class="field">
             <label for="f-years">Años</label>
@@ -63,7 +67,7 @@
             Exportar Excel
           </button>
         </div>
-        <p class="hint" style="margin:-10px 0 14px;">Deja Empresas, País, Grupo, Años o Meses vacíos para incluir todo. La tabla en pantalla muestra un máximo de 500 filas — usa Exportar Excel para traer todo el histórico que calce con el filtro.</p>
+        <p class="hint" style="margin:-10px 0 14px;">Deja País, Empresas, Grupo, Cuenta, Años o Meses vacíos para incluir todo. La tabla en pantalla muestra un máximo de 500 filas — usa Exportar Excel para traer todo el histórico que calce con el filtro.</p>
 
         <div id="error-banner" class="banner-error">
           <span id="error-banner-text"></span>
